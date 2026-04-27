@@ -1,0 +1,83 @@
+.dashboard-pro-wrap {
+  padding-top: 6px;
+}
+
+.dashboard-hero {
+  background: linear-gradient(135deg, #6418c3, #7c3aed);
+  color: #f3e8ff;
+  border-radius: 14px;
+  padding: 18px 20px;
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.dashboard-hero-title {
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.dashboard-hero-subtitle {
+  color: #efe7ff;
+  font-size: 0.92rem;
+}
+
+.dashboard-hero-pill {
+  background: rgba(255, 255, 255, 0.18);
+  border: 1px solid rgba(255, 255, 255, 0.35);
+  color: #ffffff;
+  border-radius: 999px;
+  padding: 4px 10px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.dashboard-kpi-card,
+.dashboard-panel-card {
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  border-radius: 12px;
+}
+
+.dashboard-kpi-title {
+  color: #64748b;
+  font-size: 0.85rem;
+}
+
+.dashboard-kpi-value {
+  font-weight: 700;
+  letter-spacing: 0.2px;
+}
+
+.dashboard-kpi-icon {
+  color: #6418c3;
+  opacity: 0.95;
+}
+
+.dashboard-panel-head {
+  padding-bottom: 0;
+}
+
+.dashboard-stat-row {
+  border-bottom: 1px dashed #e2e8f0;
+  padding-bottom: 6px;
+}
+
+.dashboard-btn-gradient {
+  background: linear-gradient(135deg, #6418c3, #7c3aed);
+  border-color: #6418c3;
+}
+
+.dashboard-btn-soft {
+  border-color: #d6b8ff;
+  color: #5b21b6;
+}
+
+.dashboard-btn-soft:hover {
+  background: #f3e8ff;
+  border-color: #c084fc;
+  color: #4c1d95;
+}
+

@@ -1,0 +1,12 @@
+# Node artifact files
+node_modules/
+
+dist/
+db_backups/
+# .env.*
+.vscode
+.DS_Store
+package-lock.json
+*.log
+.env
+public/

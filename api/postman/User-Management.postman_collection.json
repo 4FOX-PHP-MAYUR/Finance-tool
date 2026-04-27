@@ -1,0 +1,757 @@
+{
+  "info": {
+    "name": "User Management Module",
+    "_postman_id": "user-management-module-v2",
+    "description": "Complete User Management Module — Register, Login, Logout, CRUD with JWT auth and audit logging. Fields updated: userName, mobileNumber, dob, gender, imageUrl, roleId (relational).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    {
+      "key": "base_url",
+      "value": "http://localhost:3000",
+      "type": "string"
+    },
+    {
+      "key": "token",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "user_id",
+      "value": "",
+      "type": "string"
+    },
+    {
+      "key": "role_id",
+      "value": "",
+      "type": "string",
+      "description": "Paste a valid Role ObjectId from GET /api/admin/role (id field)"
+    },
+    {
+      "key": "client_id",
+      "value": "",
+      "type": "string",
+      "description": "Paste a valid Client ObjectId — required for creating/updating projects"
+    },
+    {
+      "key": "project_id",
+      "value": "",
+      "type": "string",
+      "description": "Auto-saved from Create Project response"
+    }
+  ],
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.results && json.results.data && json.results.data.token) {",
+                  "    pm.collectionVariables.set('token', json.results.data.token);",
+                  "    console.log('Token saved:', json.results.data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Admin@1234\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "Login with email & password. JWT token is automatically saved to the `token` collection variable."
+          },
+          "response": [
+            {
+              "name": "200 — Login Success",
+              "status": "OK",
+              "code": 200,
+              "originalRequest": {
+                "method": "POST",
+                "header": [{ "key": "Content-Type", "value": "application/json" }],
+                "body": {
+                  "mode": "raw",
+                  "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"Admin@1234\"\n}"
+                },
+                "url": { "raw": "{{base_url}}/api/auth/login" }
+              },
+              "body": "{\n  \"message\": \"OK\",\n  \"error\": false,\n  \"code\": 200,\n  \"results\": {\n    \"message\": \"Login successfully\",\n    \"data\": {\n      \"user\": { \"_id\": \"...\", \"userName\": \"Admin User\", \"email\": \"admin@example.com\", \"roleId\": { \"roleName\": \"Admin\" } },\n      \"token\": \"eyJhbGci...\"\n    }\n  }\n}"
+            },
+            {
+              "name": "401 — Invalid Credentials",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"message\": \"Invalid email id or password\",\n  \"code\": 401,\n  \"error\": true\n}"
+            }
+          ]
+        },
+        {
+          "name": "Logout User",
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/logout",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "logout"]
+            },
+            "description": "Logs the user out and records a LOGOUT audit entry. Requires Bearer token."
+          },
+          "response": [
+            {
+              "name": "200 — Logout Success",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"OK\",\n  \"error\": false,\n  \"code\": 200,\n  \"results\": {\n    \"message\": \"Logged out successfully\",\n    \"data\": {}\n  }\n}"
+            },
+            {
+              "name": "401 — No / Expired Token",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"message\": \"Access denied. No Bearer token provided\",\n  \"code\": 401,\n  \"error\": true\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Roles",
+      "description": "Fetch available roles to populate the roleId dropdown in user forms.",
+      "item": [
+        {
+          "name": "Get All Roles",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/admin/role",
+              "host": ["{{base_url}}"],
+              "path": ["api", "admin", "role"]
+            },
+            "description": "Fetch all active roles. Use the returned `id` as `roleId` when creating or updating users. Call this on form load to populate the role dropdown."
+          },
+          "response": [
+            {
+              "name": "200 — Roles List",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"OK\",\n  \"error\": false,\n  \"code\": 200,\n  \"results\": [\n    { \"id\": \"60d0fe4f5311236168a109ca\", \"name\": \"Admin\" },\n    { \"id\": \"60d0fe4f5311236168a109cb\", \"name\": \"User\" }\n  ]\n}"
+            },
+            {
+              "name": "401 — No / Expired Token",
+              "status": "Unauthorized",
+              "code": 401,
+              "body": "{\n  \"message\": \"Access denied. No Bearer token provided\",\n  \"code\": 401,\n  \"error\": true\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Register User",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json.results && json.results.data && json.results.data._id) {",
+                  "    pm.collectionVariables.set('user_id', json.results.data._id);",
+                  "    console.log('User ID saved:', json.results.data._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"mobileNumber\": \"9876543210\",\n  \"dob\": \"1990-05-15\",\n  \"gender\": \"male\",\n  \"imageUrl\": \"https://example.com/images/john.png\",\n  \"password\": \"Password@123\",\n  \"roleId\": \"{{role_id}}\",\n  \"status\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Register a new user. No auth required. Provide `roleId` from GET /api/admin/role. The created user's `_id` is auto-saved to the `user_id` variable."
+          },
+          "response": [
+            {
+              "name": "201 — User Created",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"message\": \"OK\",\n  \"error\": false,\n  \"code\": 201,\n  \"results\": {\n    \"message\": \"User registered successfully\",\n    \"data\": {\n      \"_id\": \"60d0fe4f5311236168a109cc\",\n      \"userName\": \"John Doe\",\n      \"email\": \"john.doe@example.com\",\n      \"mobileNumber\": \"9876543210\",\n      \"dob\": \"1990-05-15T00:00:00.000Z\",\n      \"gender\": \"male\",\n      \"imageUrl\": \"https://example.com/images/john.png\",\n      \"roleId\": { \"roleName\": \"User\" },\n      \"isActive\": true,\n      \"isDeleted\": false\n    }\n  }\n}"
+            },
+            {
+              "name": "400 — Validation Error (weak password)",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"message\": \"Password must contain at least 1 uppercase, 1 lowercase, 1 number, and 1 special character\",\n  \"code\": 400,\n  \"error\": true\n}"
+            },
+            {
+              "name": "400 — Email Already Exists",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"message\": \"Email already exists\",\n  \"code\": 400,\n  \"error\": true\n}"
+            },
+            {
+              "name": "400 — Role Not Found",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"message\": \"Role not found\",\n  \"code\": 400,\n  \"error\": true\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users"]
+            },
+            "description": "Returns all active (non-deleted) users. roleId is auto-populated with roleName. Requires Bearer token."
+          },
+          "response": [
+            {
+              "name": "200 — Users List",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"OK\",\n  \"error\": false,\n  \"code\": 200,\n  \"results\": {\n    \"message\": \"Users fetched successfully\",\n    \"data\": [\n      {\n        \"_id\": \"60d0fe4f5311236168a109cc\",\n        \"userName\": \"John Doe\",\n        \"email\": \"john.doe@example.com\",\n        \"mobileNumber\": \"9876543210\",\n        \"dob\": \"1990-05-15T00:00:00.000Z\",\n        \"gender\": \"male\",\n        \"imageUrl\": \"https://example.com/images/john.png\",\n        \"roleId\": { \"roleName\": \"User\" },\n        \"isActive\": true,\n        \"isDeleted\": false\n      }\n    ]\n  }\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get Single User",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{user_id}}"]
+            },
+            "description": "Fetch a single active user by ID. Requires Bearer token."
+          },
+          "response": [
+            {
+              "name": "200 — User Found",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"OK\",\n  \"error\": false,\n  \"code\": 200,\n  \"results\": {\n    \"message\": \"User data found\",\n    \"data\": {\n      \"_id\": \"60d0fe4f5311236168a109cc\",\n      \"userName\": \"John Doe\",\n      \"email\": \"john.doe@example.com\",\n      \"mobileNumber\": \"9876543210\",\n      \"dob\": \"1990-05-15T00:00:00.000Z\",\n      \"gender\": \"male\",\n      \"imageUrl\": \"https://example.com/images/john.png\",\n      \"roleId\": { \"roleName\": \"User\" },\n      \"isActive\": true,\n      \"isDeleted\": false\n    }\n  }\n}"
+            },
+            {
+              "name": "404 — User Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"message\": \"User not found\",\n  \"code\": 404,\n  \"error\": true\n}"
+            },
+            {
+              "name": "400 — Invalid ObjectId",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"message\": \"User ID must be a valid ObjectId\",\n  \"code\": 400,\n  \"error\": true\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PUT",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              },
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"Jane Smith\",\n  \"mobileNumber\": \"9123456780\",\n  \"dob\": \"1992-08-20\",\n  \"gender\": \"female\",\n  \"imageUrl\": \"https://example.com/images/jane.png\",\n  \"roleId\": \"{{role_id}}\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{user_id}}"]
+            },
+            "description": "Partially update a user. Only send fields you want to change. Password is optional — only include if changing. Password is re-hashed automatically if provided. Logs oldData vs newData."
+          },
+          "response": [
+            {
+              "name": "200 — User Updated",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"OK\",\n  \"error\": false,\n  \"code\": 200,\n  \"results\": {\n    \"message\": \"User updated successfully\",\n    \"data\": {\n      \"_id\": \"60d0fe4f5311236168a109cc\",\n      \"userName\": \"Jane Smith\",\n      \"email\": \"john.doe@example.com\",\n      \"mobileNumber\": \"9123456780\",\n      \"dob\": \"1992-08-20T00:00:00.000Z\",\n      \"gender\": \"female\",\n      \"imageUrl\": \"https://example.com/images/jane.png\",\n      \"roleId\": { \"roleName\": \"Admin\" },\n      \"isActive\": true\n    }\n  }\n}"
+            },
+            {
+              "name": "400 — Validation Error",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"errors\": [\n    { \"msg\": \"User name must be at least 3 characters\", \"param\": \"userName\" }\n  ]\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete User (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              {
+                "key": "Authorization",
+                "value": "Bearer {{token}}"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/users/{{user_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "users", "{{user_id}}"]
+            },
+            "description": "Soft-deletes the user by setting isActive=false and isDeleted=true. The record is preserved in the database. Logs the DELETE action."
+          },
+          "response": [
+            {
+              "name": "200 — User Deleted",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"OK\",\n  \"error\": false,\n  \"code\": 200,\n  \"results\": {\n    \"message\": \"User deleted successfully\",\n    \"data\": {\n      \"_id\": \"60d0fe4f5311236168a109cc\"\n    }\n  }\n}"
+            },
+            {
+              "name": "404 — User Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"message\": \"User not found\",\n  \"code\": 404,\n  \"error\": true\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "description": "Project CRUD with clientId reference, progress tracking, and mark complete.",
+      "item": [
+        {
+          "name": "Create Project",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json && json._id) {",
+                  "    pm.collectionVariables.set('project_id', json._id);",
+                  "    console.log('Project ID saved:', json._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectName\": \"My Project\",\n  \"projectDescription\": \"A sample project description\",\n  \"projectImage\": \"https://example.com/image.png\",\n  \"clientId\": \"{{client_id}}\",\n  \"startDate\": \"2024-01-01\",\n  \"endDate\": \"2024-12-31\",\n  \"isCompleted\": false,\n  \"projectPercentageCompleted\": 0,\n  \"status\": true\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/projects",
+              "host": ["{{base_url}}"],
+              "path": ["api", "projects"]
+            },
+            "description": "Create a new project. `clientId` is required and must be a valid Client ObjectId. The created project's `_id` is auto-saved to `project_id`."
+          },
+          "response": [
+            {
+              "name": "201 — Project Created",
+              "status": "Created",
+              "code": 201,
+              "body": "{\n  \"_id\": \"60d0fe4f5311236168a109dd\",\n  \"projectName\": \"My Project\",\n  \"projectDescription\": \"A sample project description\",\n  \"clientId\": \"60d0fe4f5311236168a109cc\",\n  \"startDate\": \"2024-01-01T00:00:00.000Z\",\n  \"endDate\": \"2024-12-31T00:00:00.000Z\",\n  \"isCompleted\": false,\n  \"projectPercentageCompleted\": 0,\n  \"status\": true,\n  \"createdAt\": \"2024-01-01T00:00:00.000Z\"\n}"
+            },
+            {
+              "name": "400 — Missing clientId",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"message\": \"clientId is required.\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Get All Projects",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/projects",
+              "host": ["{{base_url}}"],
+              "path": ["api", "projects"]
+            },
+            "description": "Returns all active projects."
+          },
+          "response": [
+            {
+              "name": "200 — Projects List",
+              "status": "OK",
+              "code": 200,
+              "body": "[\n  {\n    \"_id\": \"60d0fe4f5311236168a109dd\",\n    \"projectName\": \"My Project\",\n    \"clientId\": \"60d0fe4f5311236168a109cc\",\n    \"startDate\": \"2024-01-01T00:00:00.000Z\",\n    \"endDate\": \"2024-12-31T00:00:00.000Z\",\n    \"isCompleted\": false,\n    \"projectPercentageCompleted\": 0,\n    \"status\": true\n  }\n]"
+            }
+          ]
+        },
+        {
+          "name": "Get Single Project",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/projects/{{project_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "projects", "{{project_id}}"]
+            },
+            "description": "Fetch a single active project by ID."
+          },
+          "response": [
+            {
+              "name": "200 — Project Found",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"_id\": \"60d0fe4f5311236168a109dd\",\n  \"projectName\": \"My Project\",\n  \"clientId\": \"60d0fe4f5311236168a109cc\",\n  \"startDate\": \"2024-01-01T00:00:00.000Z\",\n  \"endDate\": \"2024-12-31T00:00:00.000Z\",\n  \"isCompleted\": false,\n  \"projectPercentageCompleted\": 0,\n  \"status\": true\n}"
+            },
+            {
+              "name": "404 — Project Not Found",
+              "status": "Not Found",
+              "code": 404,
+              "body": "{\n  \"message\": \"Project not found\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Project",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectName\": \"Updated Project Name\",\n  \"projectDescription\": \"Updated description\",\n  \"clientId\": \"{{client_id}}\",\n  \"endDate\": \"2025-06-30\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/projects/{{project_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "projects", "{{project_id}}"]
+            },
+            "description": "Update a project. Only send fields you want to change. `clientId` can be updated to a different Client ObjectId."
+          },
+          "response": [
+            {
+              "name": "200 — Project Updated",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"_id\": \"60d0fe4f5311236168a109dd\",\n  \"projectName\": \"Updated Project Name\",\n  \"clientId\": \"60d0fe4f5311236168a109cc\",\n  \"status\": true\n}"
+            }
+          ]
+        },
+        {
+          "name": "Delete Project (Soft Delete)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/projects/{{project_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "projects", "{{project_id}}"]
+            },
+            "description": "Soft-deletes the project by setting status=false."
+          },
+          "response": [
+            {
+              "name": "200 — Project Deleted",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"message\": \"Project soft deleted\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Update Progress",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" },
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectPercentageCompleted\": 50\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/projects/{{project_id}}/progress",
+              "host": ["{{base_url}}"],
+              "path": ["api", "projects", "{{project_id}}", "progress"]
+            },
+            "description": "Update project completion percentage (0–100). Auto-sets isCompleted=true when 100."
+          },
+          "response": [
+            {
+              "name": "200 — Progress Updated",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"_id\": \"60d0fe4f5311236168a109dd\",\n  \"projectPercentageCompleted\": 50,\n  \"isCompleted\": false\n}"
+            },
+            {
+              "name": "400 — Invalid Percentage",
+              "status": "Bad Request",
+              "code": 400,
+              "body": "{\n  \"message\": \"Percentage must be 0-100\"\n}"
+            }
+          ]
+        },
+        {
+          "name": "Mark Complete",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/projects/{{project_id}}/complete",
+              "host": ["{{base_url}}"],
+              "path": ["api", "projects", "{{project_id}}", "complete"]
+            },
+            "description": "Marks the project as fully complete — sets isCompleted=true and projectPercentageCompleted=100."
+          },
+          "response": [
+            {
+              "name": "200 — Project Completed",
+              "status": "OK",
+              "code": 200,
+              "body": "{\n  \"_id\": \"60d0fe4f5311236168a109dd\",\n  \"isCompleted\": true,\n  \"projectPercentageCompleted\": 100\n}"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "Validation Checks",
+      "description": "Pre-built requests to verify all validation rules are enforced correctly.",
+      "item": [
+        {
+          "name": "Register — Missing userName",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"test@example.com\",\n  \"mobileNumber\": \"9876543210\",\n  \"dob\": \"1990-01-01\",\n  \"gender\": \"male\",\n  \"password\": \"Password@123\",\n  \"roleId\": \"{{role_id}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/users", "host": ["{{base_url}}"], "path": ["api", "users"] },
+            "description": "Expected 400 — User name is required"
+          }
+        },
+        {
+          "name": "Register — userName too short (< 3 chars)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"Jo\",\n  \"email\": \"test@example.com\",\n  \"mobileNumber\": \"9876543210\",\n  \"dob\": \"1990-01-01\",\n  \"gender\": \"male\",\n  \"password\": \"Password@123\",\n  \"roleId\": \"{{role_id}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/users", "host": ["{{base_url}}"], "path": ["api", "users"] },
+            "description": "Expected 400 — User name must be at least 3 characters"
+          }
+        },
+        {
+          "name": "Register — Invalid email format",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"John Doe\",\n  \"email\": \"not-an-email\",\n  \"mobileNumber\": \"9876543210\",\n  \"dob\": \"1990-01-01\",\n  \"gender\": \"male\",\n  \"password\": \"Password@123\",\n  \"roleId\": \"{{role_id}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/users", "host": ["{{base_url}}"], "path": ["api", "users"] },
+            "description": "Expected 400 — Please enter a valid email address"
+          }
+        },
+        {
+          "name": "Register — Invalid mobileNumber (letters)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"John Doe\",\n  \"email\": \"test@example.com\",\n  \"mobileNumber\": \"phone1234\",\n  \"dob\": \"1990-01-01\",\n  \"gender\": \"male\",\n  \"password\": \"Password@123\",\n  \"roleId\": \"{{role_id}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/users", "host": ["{{base_url}}"], "path": ["api", "users"] },
+            "description": "Expected 400 — Mobile number must be numeric and exactly 10 digits"
+          }
+        },
+        {
+          "name": "Register — Invalid dob",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"John Doe\",\n  \"email\": \"test@example.com\",\n  \"mobileNumber\": \"9876543210\",\n  \"dob\": \"not-a-date\",\n  \"gender\": \"male\",\n  \"password\": \"Password@123\",\n  \"roleId\": \"{{role_id}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/users", "host": ["{{base_url}}"], "path": ["api", "users"] },
+            "description": "Expected 400 — Date of birth must be a valid date"
+          }
+        },
+        {
+          "name": "Register — Invalid gender",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"John Doe\",\n  \"email\": \"test@example.com\",\n  \"mobileNumber\": \"9876543210\",\n  \"dob\": \"1990-01-01\",\n  \"gender\": \"unknown\",\n  \"password\": \"Password@123\",\n  \"roleId\": \"{{role_id}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/users", "host": ["{{base_url}}"], "path": ["api", "users"] },
+            "description": "Expected 400 — Gender must be male, female, or other"
+          }
+        },
+        {
+          "name": "Register — Invalid imageUrl",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"John Doe\",\n  \"email\": \"test@example.com\",\n  \"mobileNumber\": \"9876543210\",\n  \"dob\": \"1990-01-01\",\n  \"gender\": \"male\",\n  \"imageUrl\": \"not-a-url\",\n  \"password\": \"Password@123\",\n  \"roleId\": \"{{role_id}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/users", "host": ["{{base_url}}"], "path": ["api", "users"] },
+            "description": "Expected 400 — Image URL must be a valid URL"
+          }
+        },
+        {
+          "name": "Register — Weak password (no special char)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"John Doe\",\n  \"email\": \"test2@example.com\",\n  \"mobileNumber\": \"9876543210\",\n  \"dob\": \"1990-01-01\",\n  \"gender\": \"male\",\n  \"password\": \"Password1\",\n  \"roleId\": \"{{role_id}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/users", "host": ["{{base_url}}"], "path": ["api", "users"] },
+            "description": "Expected 400 — Password must contain at least 1 uppercase, 1 lowercase, 1 number, and 1 special character"
+          }
+        },
+        {
+          "name": "Register — Password too short",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"John Doe\",\n  \"email\": \"test3@example.com\",\n  \"mobileNumber\": \"9876543210\",\n  \"dob\": \"1990-01-01\",\n  \"gender\": \"male\",\n  \"password\": \"Ab@1\",\n  \"roleId\": \"{{role_id}}\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/users", "host": ["{{base_url}}"], "path": ["api", "users"] },
+            "description": "Expected 400 — Password must be at least 8 characters"
+          }
+        },
+        {
+          "name": "Register — Missing roleId",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"John Doe\",\n  \"email\": \"test4@example.com\",\n  \"mobileNumber\": \"9876543210\",\n  \"dob\": \"1990-01-01\",\n  \"gender\": \"male\",\n  \"password\": \"Password@123\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/users", "host": ["{{base_url}}"], "path": ["api", "users"] },
+            "description": "Expected 400 — Role is required"
+          }
+        },
+        {
+          "name": "Register — Invalid roleId (not ObjectId)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"John Doe\",\n  \"email\": \"test5@example.com\",\n  \"mobileNumber\": \"9876543210\",\n  \"dob\": \"1990-01-01\",\n  \"gender\": \"male\",\n  \"password\": \"Password@123\",\n  \"roleId\": \"not-an-objectid\"\n}"
+            },
+            "url": { "raw": "{{base_url}}/api/users", "host": ["{{base_url}}"], "path": ["api", "users"] },
+            "description": "Expected 400 — roleId must be a valid ObjectId"
+          }
+        },
+        {
+          "name": "Access protected route without token",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{base_url}}/api/users", "host": ["{{base_url}}"], "path": ["api", "users"] },
+            "description": "Expected 401 — Access denied. No Bearer token provided"
+          }
+        }
+      ]
+    }
+  ]
+}

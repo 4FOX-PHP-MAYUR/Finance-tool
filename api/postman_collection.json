@@ -1,0 +1,805 @@
+{
+  "info": {
+    "_postman_id": "a6f90b1b-ef6f-4b91-a9fb-1f5a1af6c3d2",
+    "name": "Booking-CMS RBAC",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json",
+    "description": "Postman collection for Role / Module / Permission APIs (JWT + role-level permission control)."
+  },
+  "item": [
+    {
+      "name": "Auth",
+      "item": [
+        {
+          "name": "Login",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"YourPassword123\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"mobileNumber\": \"9876543210\",\n  \"dob\": \"1990-05-15\",\n  \"gender\": \"male\",\n  \"imageUrl\": \"https://example.com/images/john.png\",\n  \"password\": \"P@ssword123\",\n  \"roleId\": \"<ROLE_ID>\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/auth/create-user",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "auth", "create-user"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Me (profile)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/auth/me",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "auth", "me"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Register User",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"John Doe\",\n  \"email\": \"john.doe@example.com\",\n  \"mobileNumber\": \"9876543210\",\n  \"dob\": \"1990-05-15\",\n  \"gender\": \"male\",\n  \"imageUrl\": \"https://example.com/images/john.png\",\n  \"password\": \"Test@1234\",\n  \"roleId\": \"{{roleId}}\",\n  \"departmentId\": \"{{departmentId}}\",\n  \"status\": true\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Login",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.results && json.results.data && json.results.data.token) {",
+                  "  pm.collectionVariables.set('token', json.results.data.token);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"john.doe@example.com\",\n  \"password\": \"Test@1234\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/auth/login",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "auth", "login"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Logout",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "POST",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/auth/logout",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "auth", "logout"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Users",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/users", "host": ["{{baseUrl}}"], "path": ["users"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single User",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"userName\": \"Jane Smith\",\n  \"email\": \"jane.smith@example.com\",\n  \"mobileNumber\": \"9123456780\",\n  \"dob\": \"1992-08-20\",\n  \"gender\": \"female\",\n  \"imageUrl\": \"https://example.com/images/jane.png\",\n  \"roleId\": \"{{roleId}}\",\n  \"departmentId\": \"{{departmentId}}\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete User (Soft)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/users/{{userId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["users", "{{userId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Roles",
+      "item": [
+        {
+          "name": "Create Role",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "const json = pm.response.json();",
+                  "if (json.results && json.results._id) {",
+                  "  pm.collectionVariables.set('roleId', json.results._id);",
+                  "}"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ],
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roleName\": \"Manager\",\n  \"description\": \"Manages team operations and resources\",\n  \"status\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/role",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "role"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Roles",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/role?page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "role"],
+              "query": [
+                { "key": "page", "value": "1", "description": "Page number (default: 1)" },
+                { "key": "limit", "value": "10", "description": "Records per page (default: 10, max: 100)" },
+                { "key": "search", "value": "", "description": "Search by roleName (case-insensitive)", "disabled": true },
+                { "key": "status", "value": "", "description": "Filter by status: true or false (omit to get all)", "disabled": true }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Roles (Search by Name)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/role?search=manager&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "role"],
+              "query": [
+                { "key": "search", "value": "manager", "description": "Case-insensitive search by roleName" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get All Roles (Filter by Status)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/role?status=true&page=1&limit=10",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "role"],
+              "query": [
+                { "key": "status", "value": "true", "description": "true = active roles, false = inactive (soft-deleted)" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Single Role",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/role/{{roleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "role", "{{roleId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Role",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"roleName\": \"Senior Manager\",\n  \"description\": \"Updated description for senior management role\",\n  \"status\": true\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/role/{{roleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "role", "{{roleId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Role (Soft)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/role/{{roleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "role", "{{roleId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Modules",
+      "item": [
+        {
+          "name": "Create Module",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"moduleName\": \"users\",\n  \"description\": \"User management module\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/modules",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "modules"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Modules",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/modules",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "modules"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Permissions",
+      "item": [
+        {
+          "name": "Get Role Permissions",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/admin/permissions/roles/{{roleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "permissions", "roles", "{{roleId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Assign/Update Permissions",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"permissions\": [\n    {\n      \"moduleId\": \"<MODULE_ID_FOR_USERS>\",\n      \"access\": {\n        \"view\": true,\n        \"add\": true,\n        \"update\": false,\n        \"delete\": false\n      }\n    },\n    {\n      \"moduleId\": \"<MODULE_ID_FOR_PRODUCTS>\",\n      \"access\": {\n        \"view\": true,\n        \"add\": false,\n        \"update\": false,\n        \"delete\": false\n      }\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/permissions/roles/{{roleId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "permissions", "roles", "{{roleId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Copy Permissions",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"fromRoleId\": \"<SOURCE_ROLE_ID>\",\n  \"toRoleId\": \"<TARGET_ROLE_ID>\"\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/admin/permissions/copy",
+              "host": ["{{baseUrl}}"],
+              "path": ["admin", "permissions", "copy"]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Clients",
+      "item": [
+        {
+          "name": "Create Client",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientName\": \"Acme Corp\",\n  \"contactPerson\": \"Jane Doe\",\n  \"clientEmail\": \"acme@example.com\",\n  \"clientMobile\": \"12345678901\",\n  \"clientImage\": \"acme.png\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/clients", "host": ["{{baseUrl}}"], "path": ["clients"] }
+          },
+          "response": []
+        },
+        {
+          "name": "List Clients",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/clients", "host": ["{{baseUrl}}"], "path": ["clients"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Client",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/clients/:id", "host": ["{{baseUrl}}"], "path": ["clients", ":id"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Client",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientName\": \"Acme Corp Updated\",\n  \"contactPerson\": \"Jane Doe\",\n  \"clientEmail\": \"acme@example.com\",\n  \"clientMobile\": \"12345678901\",\n  \"clientImage\": \"acme.png\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/clients/:id", "host": ["{{baseUrl}}"], "path": ["clients", ":id"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Client (Soft)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/clients/:id", "host": ["{{baseUrl}}"], "path": ["clients", ":id"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Activate/Deactivate Client",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "PATCH",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/clients/:id/active", "host": ["{{baseUrl}}"], "path": ["clients", ":id", "active"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Logs",
+      "item": [
+        {
+          "name": "List Logs",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/logs", "host": ["{{baseUrl}}"], "path": ["logs"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Filter Logs (by user, module, action, date)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/logs?userId=<USER_ID>&module=clients&action=CREATE&from=2024-01-01&to=2024-12-31",
+              "host": ["{{baseUrl}}"],
+              "path": ["logs"],
+              "query": [
+                { "key": "userId", "value": "<USER_ID>" },
+                { "key": "module", "value": "clients" },
+                { "key": "action", "value": "CREATE" },
+                { "key": "from", "value": "2024-01-01" },
+                { "key": "to", "value": "2024-12-31" }
+              ]
+            }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Departments",
+      "item": [
+        {
+          "name": "Create Department",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"departmentName\": \"HR\",\n  \"departmentDescription\": \"Human Resources\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/departments", "host": ["{{baseUrl}}"], "path": ["departments"] }
+          },
+          "response": []
+        },
+        {
+          "name": "List Departments (Search & Pagination)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/departments?search=HR&page=1&limit=10&includeDeleted=false",
+              "host": ["{{baseUrl}}"],
+              "path": ["departments"],
+              "query": [
+                { "key": "search", "value": "HR" },
+                { "key": "page", "value": "1" },
+                { "key": "limit", "value": "10" },
+                { "key": "includeDeleted", "value": "false" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Department",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/departments/:id", "host": ["{{baseUrl}}"], "path": ["departments", ":id"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Department",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"departmentName\": \"HR Updated\",\n  \"departmentDescription\": \"Updated description\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/departments/:id", "host": ["{{baseUrl}}"], "path": ["departments", ":id"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Department (Soft)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/departments/:id", "host": ["{{baseUrl}}"], "path": ["departments", ":id"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Restore Department",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "PATCH",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/departments/:id/restore", "host": ["{{baseUrl}}"], "path": ["departments", ":id", "restore"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Projects",
+      "item": [
+        {
+          "name": "Create Project",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectName\": \"Project Alpha\",\n  \"projectDescription\": \"A new project\",\n  \"projectImage\": \"alpha.png\",\n  \"isCompleted\": false,\n  \"projectPercentageCompleted\": 0,\n  \"startDate\": \"2026-03-24\",\n  \"endDate\": \"2026-04-24\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/projects", "host": ["{{baseUrl}}"], "path": ["projects"] }
+          },
+          "response": []
+        },
+        {
+          "name": "List Projects",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/projects", "host": ["{{baseUrl}}"], "path": ["projects"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Get Project",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/projects/:id", "host": ["{{baseUrl}}"], "path": ["projects", ":id"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Project",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectName\": \"Project Alpha Updated\",\n  \"projectDescription\": \"Updated description\",\n  \"projectImage\": \"alpha.png\",\n  \"isCompleted\": false,\n  \"projectPercentageCompleted\": 10,\n  \"startDate\": \"2026-03-24\",\n  \"endDate\": \"2026-04-24\"\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/projects/:id", "host": ["{{baseUrl}}"], "path": ["projects", ":id"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Project (Soft)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "DELETE",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/projects/:id", "host": ["{{baseUrl}}"], "path": ["projects", ":id"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Progress",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "PATCH",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"projectPercentageCompleted\": 50\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/projects/:id/progress", "host": ["{{baseUrl}}"], "path": ["projects", ":id", "progress"] }
+          },
+          "response": []
+        },
+        {
+          "name": "Mark Complete",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "PATCH",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/projects/:id/complete", "host": ["{{baseUrl}}"], "path": ["projects", ":id", "complete"] }
+          },
+          "response": []
+        }
+      ]
+    },
+    {
+      "name": "Assignments",
+      "item": [
+        {
+          "name": "Create Assignment",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"clientId\": \"{{clientId}}\",\n  \"projectId\": \"{{projectId}}\",\n  \"departmentId\": \"{{departmentId}}\",\n  \"employeeId\": \"{{employeeId}}\",\n  \"taskDescription\": \"Design creatives\",\n  \"allocations\": [\n    {\n      \"startDate\": \"2026-04-10\",\n      \"endDate\": \"2026-04-13\",\n      \"notes\": \"Nike project\",\n      \"allocationStatus\": \"BOOKED\"\n    },\n    {\n      \"startDate\": \"2026-04-14\",\n      \"endDate\": \"2026-04-14\",\n      \"notes\": \"Apple project\",\n      \"allocationStatus\": \"AVAILABLE\"\n    }\n  ]\n}"
+            },
+            "url": { "raw": "{{baseUrl}}/assignments", "host": ["{{baseUrl}}"], "path": ["assignments"] }
+          },
+          "response": []
+        },
+        {
+          "name": "List Assignments",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "GET",
+            "header": [],
+            "url": { "raw": "{{baseUrl}}/assignments", "host": ["{{baseUrl}}"], "path": ["assignments"] }
+          },
+          "response": []
+        },
+        {
+          "name": "List Assignments (Filtered)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/assignments?employeeId={{employeeId}}&projectId={{projectId}}&departmentId={{departmentId}}&startDate=2026-04-01&endDate=2026-04-30",
+              "host": ["{{baseUrl}}"],
+              "path": ["assignments"],
+              "query": [
+                { "key": "employeeId", "value": "{{employeeId}}" },
+                { "key": "projectId", "value": "{{projectId}}" },
+                { "key": "departmentId", "value": "{{departmentId}}" },
+                { "key": "startDate", "value": "2026-04-01" },
+                { "key": "endDate", "value": "2026-04-30" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Calendar View",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/assignments/calendar?startDate=2026-04-10&endDate=2026-04-14",
+              "host": ["{{baseUrl}}"],
+              "path": ["assignments", "calendar"],
+              "query": [
+                { "key": "startDate", "value": "2026-04-10" },
+                { "key": "endDate", "value": "2026-04-14" }
+              ]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Update Assignment",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "PUT",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"taskDescription\": \"Updated task description\",\n  \"allocations\": [\n    {\n      \"startDate\": \"2026-04-15\",\n      \"endDate\": \"2026-04-18\",\n      \"notes\": \"Revised schedule\",\n      \"allocationStatus\": \"HALF_DAY\"\n    }\n  ]\n}"
+            },
+            "url": {
+              "raw": "{{baseUrl}}/assignments/{{assignmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["assignments", "{{assignmentId}}"]
+            }
+          },
+          "response": []
+        },
+        {
+          "name": "Delete Assignment (Soft)",
+          "request": {
+            "auth": { "type": "bearer", "bearer": [{ "key": "token", "value": "{{token}}" }] },
+            "method": "DELETE",
+            "header": [],
+            "url": {
+              "raw": "{{baseUrl}}/assignments/{{assignmentId}}",
+              "host": ["{{baseUrl}}"],
+              "path": ["assignments", "{{assignmentId}}"]
+            }
+          },
+          "response": []
+        }
+      ]
+    }
+  ],
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api" },
+    { "key": "token", "value": "" },
+    { "key": "roleId", "value": "" },
+    { "key": "userId", "value": "" },
+    { "key": "assignmentId", "value": "" },
+    { "key": "employeeId", "value": "" },
+    { "key": "projectId", "value": "" },
+    { "key": "departmentId", "value": "" },
+    { "key": "clientId", "value": "" }
+  ]
+}

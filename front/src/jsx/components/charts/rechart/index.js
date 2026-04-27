@@ -1,0 +1,62 @@
+import React from "react";
+// import { Link } from 'react-router-dom';
+import { Row, Col, Card } from "react-bootstrap";
+
+import PageTitle from "../../../layouts/PageTitle";
+
+import BarChartNoPadding from "./BarChartNoPadding";
+import PositiveNagative from "./PositiveNagative";
+import LegendEffectOpacity from "./LegendEffectOpacity";
+import TinyLineChart from "./TinyLineChart";
+
+function RechartJs() {
+   return (
+      <>
+         <PageTitle headingPara="ReChartJs" motherMenu="Charts" activeMenu="ReChartJs" />
+         <Row className="h-80">
+            <Col xl={6}>
+               <Card>
+                  <Card.Header>
+                     <Card.Title>Line</Card.Title>
+                  </Card.Header>
+                  <Card.Body>
+                     <BarChartNoPadding />
+                  </Card.Body>
+               </Card>
+            </Col>
+            <Col xl={6}>
+               <Card>
+                  <Card.Header>
+                     <Card.Title>Line</Card.Title>
+                  </Card.Header>
+                  <Card.Body>
+                     <PositiveNagative />
+                  </Card.Body>
+               </Card>
+            </Col>
+            <Col xl={6}>
+               <Card>
+                  <Card.Header>
+                     <Card.Title>Line</Card.Title>
+                  </Card.Header>
+                  <Card.Body>
+                     <LegendEffectOpacity />
+                  </Card.Body>
+               </Card>
+            </Col>
+            <Col xl={6}>
+               <Card>
+                  <Card.Header>
+                     <Card.Title>Line</Card.Title>
+                  </Card.Header>
+                  <Card.Body>
+                     <TinyLineChart />
+                  </Card.Body>
+               </Card>
+            </Col>
+         </Row>
+      </>
+   );
+}
+
+export default RechartJs;

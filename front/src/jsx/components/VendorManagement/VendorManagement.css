@@ -1,0 +1,35 @@
+/* Match BO (#bom-pdf-root) textarea look outside BOM — see BusinessOrdersManagement.css */
+.vendor-form-root .bom-textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-size: 14px;
+}
+
+.vendor-form-root .bom-scope-details-textarea {
+  min-height: 120px;
+  resize: vertical;
+  font-size: 14px;
+}
+
+.vendor-form-root .vendor-doc-item {
+  padding-top: 8px;
+  padding-bottom: 8px;
+}
+
+.vendor-form-root .vendor-doc-action-btn {
+  width: 24px;
+  height: 24px;
+  min-width: 24px;
+  min-height: 24px;
+  padding: 0;
+  border-radius: 8px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+}
+
+.vendor-form-root .vendor-doc-action-btn i {
+  font-size: 11px;
+  line-height: 1;
+}

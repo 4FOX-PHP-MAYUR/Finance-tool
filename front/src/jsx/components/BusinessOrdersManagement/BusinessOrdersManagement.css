@@ -1,0 +1,603 @@
+/* Scoped copy of PDF reader/frontend/src/App.css — matches that UI without clashing globally */
+#bom-pdf-root .bom-app {
+  width: 100%;
+  max-width: 100%;
+  margin: 0;
+  padding: 0;
+}
+
+#bom-pdf-root .bom-app,
+#bom-pdf-root .bom-app-layout,
+#bom-pdf-root .bom-app-layout > .bom-panel {
+  width: 100%;
+  max-width: none;
+}
+
+#bom-pdf-root .bom-app-topbar {
+  margin-bottom: 18px;
+  padding-top: 28px;
+}
+
+#bom-pdf-root .bom-topbar-tag {
+  margin: 0;
+  color: #0e7490;
+  font-weight: 700;
+  font-size: 12px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+#bom-pdf-root .bom-topbar-title {
+  margin: 8px 0 0;
+  font-size: 34px;
+  color: #0f172a;
+  line-height: 1.15;
+}
+
+#bom-pdf-root .bom-app-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 24px;
+}
+
+#bom-pdf-root .bom-panel {
+  background: rgba(255, 255, 255, 0.95);
+  border: 1px solid #e2e8f0;
+  border-radius: 20px;
+  box-shadow: 0 16px 40px rgba(15, 23, 42, 0.08);
+}
+
+#bom-pdf-root .bom-panel-side {
+  padding: 24px;
+}
+
+#bom-pdf-root .bom-panel-header {
+  margin-bottom: 22px;
+}
+
+#bom-pdf-root .bom-app-layout > .bom-panel {
+  min-width: 0;
+}
+
+#bom-pdf-root .bom-badge {
+  display: inline-block;
+  padding: 6px 12px;
+  border-radius: 999px;
+  font-size: 11px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  font-weight: 700;
+  color: #0369a1;
+  background: #e0f2fe;
+}
+
+#bom-pdf-root .bom-title {
+  margin: 14px 0 8px;
+  font-size: 32px;
+  line-height: 1.1;
+  color: #0f172a;
+}
+
+#bom-pdf-root .bom-subtitle {
+  margin: 0;
+  color: #475569;
+}
+
+#bom-pdf-root .bom-dropzone {
+  padding: 34px 18px;
+  border: 2px dashed #cbd5e1;
+  border-radius: 16px;
+  background: #f8fafc;
+  text-align: center;
+  transition: all 0.2s ease;
+}
+
+#bom-pdf-root .bom-dropzone:hover {
+  border-color: #94a3b8;
+}
+
+#bom-pdf-root .bom-dropzone-active {
+  border-color: #06b6d4;
+  background: #ecfeff;
+}
+
+#bom-pdf-root .bom-dropzone-title {
+  margin: 0;
+  font-weight: 600;
+  color: #334155;
+}
+
+#bom-pdf-root .bom-dropzone-subtitle {
+  margin: 10px 0;
+  font-size: 13px;
+  color: #64748b;
+}
+
+#bom-pdf-root .bom-file-name {
+  margin: 14px 0 0;
+  color: #475569;
+  font-size: 14px;
+  word-break: break-all;
+}
+
+#bom-pdf-root .bom-actions {
+  margin-top: 16px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+#bom-pdf-root .bom-btn {
+  border: 0;
+  border-radius: 10px;
+  padding: 11px 18px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+#bom-pdf-root .bom-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.7;
+}
+
+#bom-pdf-root .bom-btn-dark {
+  background: #0f172a;
+  color: #fff;
+}
+
+#bom-pdf-root .bom-btn-dark:hover {
+  background: #1e293b;
+}
+
+#bom-pdf-root .bom-btn-primary {
+  background: linear-gradient(135deg, #0284c7, #06b6d4);
+  color: #fff;
+}
+
+#bom-pdf-root .bom-btn-primary:hover {
+  filter: brightness(1.05);
+}
+
+#bom-pdf-root .bom-btn-success {
+  background: linear-gradient(135deg, #059669, #10b981);
+  color: #fff;
+}
+
+#bom-pdf-root .bom-btn-success:hover:not(:disabled) {
+  filter: brightness(1.05);
+}
+
+#bom-pdf-root .bom-approved-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 8px 14px;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 700;
+  color: #047857;
+  background: #d1fae5;
+  border: 1px solid #6ee7b7;
+}
+
+#bom-pdf-root .bom-btn-light {
+  background: #fff;
+  border: 1px solid #cbd5e1;
+  color: #334155;
+}
+
+#bom-pdf-root .bom-btn-light:hover {
+  background: #f8fafc;
+}
+
+#bom-pdf-root .bom-message {
+  margin-top: 14px;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 14px;
+}
+
+#bom-pdf-root .bom-message-error {
+  color: #b91c1c;
+  border: 1px solid #fecaca;
+  background: #fef2f2;
+}
+
+#bom-pdf-root .bom-result-section {
+  margin-top: 22px;
+  border-radius: 16px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  padding: 18px;
+}
+
+#bom-pdf-root .bom-result-title {
+  margin: 0;
+  font-size: 20px;
+  color: #0f172a;
+}
+
+#bom-pdf-root .bom-result-list {
+  margin-top: 14px;
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+#bom-pdf-root .bom-result-list {
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 768px) {
+  #bom-pdf-root .bom-result-list {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (min-width: 1200px) {
+  #bom-pdf-root .bom-result-list {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+#bom-pdf-root .bom-result-row {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  background: #fff;
+  display: grid;
+  grid-template-columns: 180px minmax(0, 1fr);
+  align-items: start;
+  column-gap: 12px;
+}
+
+#bom-pdf-root .bom-result-label {
+  margin: 0;
+  font-size: 12px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: #64748b;
+  padding-top: 2px;
+}
+
+#bom-pdf-root .bom-result-value {
+  margin: 0;
+  color: #0f172a;
+  font-size: 15px;
+  line-height: 1.4;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+#bom-pdf-root .bom-result-value-wide {
+  max-height: 110px;
+  overflow: auto;
+}
+
+#bom-pdf-root .bom-scope-list {
+  display: grid;
+  gap: 8px;
+}
+
+#bom-pdf-root .bom-scope-item {
+  border: 1px solid #e2e8f0;
+  border-radius: 8px;
+  padding: 8px;
+  background: #f8fafc;
+}
+
+#bom-pdf-root .bom-scope-title {
+  margin: 0;
+  font-weight: 600;
+  color: #0f172a;
+}
+
+#bom-pdf-root .bom-scope-details {
+  margin: 6px 0 0 18px;
+  padding: 0;
+}
+
+#bom-pdf-root .bom-scope-details li {
+  margin: 3px 0;
+}
+
+#bom-pdf-root .bom-side-title {
+  margin: 0;
+  font-size: 22px;
+  color: #0f172a;
+}
+
+#bom-pdf-root .bom-side-subtitle {
+  margin: 6px 0 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+#bom-pdf-root .bom-history-list {
+  margin-top: 16px;
+  display: grid;
+  gap: 10px;
+}
+
+#bom-pdf-root .bom-history-empty {
+  margin: 0;
+  border-radius: 10px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #64748b;
+  padding: 14px;
+  font-size: 14px;
+}
+
+#bom-pdf-root .bom-history-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 12px;
+  padding: 14px;
+  background: #f8fafc;
+}
+
+#bom-pdf-root .bom-history-file {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 700;
+  color: #1e293b;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#bom-pdf-root .bom-history-time {
+  margin: 4px 0 8px;
+  font-size: 12px;
+  color: #64748b;
+}
+
+#bom-pdf-root .bom-history-meta {
+  margin: 2px 0;
+  font-size: 12px;
+  color: #475569;
+}
+
+#bom-pdf-root .bom-panel-sow {
+  display: flex;
+  flex-direction: column;
+  min-height: 320px;
+}
+
+#bom-pdf-root .bom-sow-body {
+  flex: 1;
+  margin-top: 12px;
+  min-height: 0;
+  overflow: visible;
+  max-height: none;
+}
+
+#bom-pdf-root .bom-scope-list-aside {
+  display: grid;
+  gap: 10px;
+}
+
+#bom-pdf-root .bom-sow-empty {
+  margin: 0;
+  color: #64748b;
+  font-size: 14px;
+}
+
+#bom-pdf-root .bom-result-row .bom-input,
+#bom-pdf-root .bom-result-row .bom-textarea {
+  margin: 0;
+  max-width: 100%;
+}
+
+#bom-pdf-root .bom-scope-item-edit {
+  margin-bottom: 12px;
+}
+
+#bom-pdf-root .bom-scope-details-textarea {
+  min-height: 220px;
+  resize: none;
+  overflow: hidden;
+  font-size: 14px;
+}
+
+#bom-pdf-root .bom-textarea {
+  resize: vertical;
+  min-height: 80px;
+  font-size: 14px;
+}
+
+#bom-pdf-root .bom-visually-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* Full-width block below the narrow upload panel (not constrained by .bom-app max-width) */
+#bom-pdf-root .bom-invoice-full-wrapper {
+  width: 100%;
+  max-width: 100%;
+  margin-left: 0;
+  margin-right: 0;
+  box-sizing: border-box;
+}
+
+#bom-pdf-root .bom-invoice-list-below {
+  margin-top: 28px;
+}
+
+#bom-pdf-root .bom-invoice-card {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+#bom-pdf-root .bom-invoice-card-header {
+  background: #fff;
+  border-bottom: 1px solid #e9ecef;
+}
+
+#bom-pdf-root .bom-invoice-card .card-body {
+  padding-top: 1.25rem;
+}
+
+#bom-pdf-root .bom-invoice-table-wrap {
+  border: 1px solid #e9ecef;
+  border-radius: 10px;
+  overflow: hidden;
+  background: #fff;
+}
+
+#bom-pdf-root .bom-sow-main-heading {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+#bom-pdf-root .bom-invoice-table {
+  margin-bottom: 0;
+  font-size: 14px;
+  min-width: 920px;
+}
+
+#bom-pdf-root .bom-invoice-th-sow {
+  min-width: 160px;
+  max-width: 280px;
+}
+
+#bom-pdf-root .bom-invoice-sow-cell {
+  max-width: 280px;
+  font-size: 13px;
+  color: #334155;
+}
+
+#bom-pdf-root .bom-invoice-th-pdf {
+  width: 1%;
+  white-space: nowrap;
+}
+
+#bom-pdf-root .bom-invoice-pdf-btn {
+  white-space: nowrap;
+}
+
+#bom-pdf-root .bom-invoice-table thead {
+  background: #f8f9fa;
+}
+
+#bom-pdf-root .bom-invoice-th-style {
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #6c757d;
+  font-weight: 600;
+  border-bottom-width: 1px;
+  white-space: nowrap;
+}
+
+#bom-pdf-root .bom-invoice-th-sort {
+  cursor: pointer;
+  user-select: none;
+}
+
+#bom-pdf-root .bom-invoice-th-sort:hover {
+  color: #495057;
+}
+
+#bom-pdf-root .bom-invoice-th-actions {
+  min-width: 148px;
+  width: 1%;
+}
+
+#bom-pdf-root .bom-invoice-th-invoice-no {
+  min-width: 160px;
+}
+
+#bom-pdf-root .bom-invoice-cell-invoice-no {
+  white-space: normal;
+  word-break: break-word;
+}
+
+#bom-pdf-root .bom-invoice-icon-actions {
+  overflow: visible;
+  vertical-align: middle;
+}
+
+#bom-pdf-root .bom-invoice-action-btns {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+}
+
+#bom-pdf-root .bom-invoice-action-btn {
+  width: 34px;
+  height: 34px;
+  min-width: 34px;
+  min-height: 34px;
+  padding: 0 !important;
+  margin: 0 !important;
+  border-radius: 50% !important;
+  display: inline-flex !important;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  line-height: 1;
+  box-sizing: border-box;
+}
+
+#bom-pdf-root .bom-invoice-action-btn i {
+  font-size: 14px;
+  line-height: 1;
+  display: block;
+}
+
+#bom-pdf-root .bom-invoice-action-btn.btn-primary {
+  color: #fff;
+}
+
+#bom-pdf-root .bom-invoice-action-btn.btn-primary i {
+  color: #fff;
+}
+
+#bom-pdf-root .bom-invoice-action-btn.btn-info {
+  color: #fff;
+}
+
+#bom-pdf-root .bom-invoice-action-btn.btn-info i {
+  color: #fff;
+}
+
+#bom-pdf-root .bom-invoice-action-btn.btn-danger i {
+  color: #fff;
+}
+
+#bom-pdf-root .bom-invoice-action-btn:disabled {
+  opacity: 0.65;
+}
+
+#bom-pdf-root .bom-view-modal-body p {
+  margin-bottom: 0.5rem;
+}
+
+@media (max-width: 900px) {
+  #bom-pdf-root .bom-topbar-title {
+    font-size: 28px;
+  }
+
+  #bom-pdf-root .bom-title {
+    font-size: 26px;
+  }
+
+  #bom-pdf-root .bom-result-row {
+    grid-template-columns: 1fr;
+    row-gap: 8px;
+  }
+}
