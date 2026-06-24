@@ -1,4 +1,5 @@
 const { c_success, c_error, c_results, db, msgConf } = require("../../startup/commonModules");
+const { invalidateModuleIdNameCache } = require("../../middlewares/permission.middleware");
 
 const ModuleModel = db.module;
 
@@ -42,6 +43,11 @@ const DEFAULT_MODULES = [
     description: "Vendor — finance review",
     parentModule: "vendors",
   },
+  {
+    moduleName: "vendor_admin_approval",
+    description: "Vendor — admin approval",
+    parentModule: "vendors",
+  },
 
   { moduleName: "projects_add", description: "Projects — add", parentModule: "projects" },
   { moduleName: "projects_list", description: "Projects — manage", parentModule: "projects" },
@@ -66,6 +72,7 @@ async function ensureDefaultModules() {
       console.error(`ensureDefaultModules failed for ${name}:`, e.message);
     }
   }
+  invalidateModuleIdNameCache();
 }
 
 exports.createModule = async (req, res) => {
@@ -91,6 +98,7 @@ exports.createModule = async (req, res) => {
       description,
       parentModule: parentModule || null,
     });
+    invalidateModuleIdNameCache();
     return res
       .status(200)
       .json(

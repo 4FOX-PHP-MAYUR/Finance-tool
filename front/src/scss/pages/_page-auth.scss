@@ -91,29 +91,23 @@
     }
 }
 .login-main-page {
-    padding: 100px;
+    padding: 40px;
     background-size: cover;
     background-position: center;
     position: relative;
     z-index: 1;
     .login-wrapper {
-        background: var(--primary);
-        max-width: 1170px;
+        background: #3e5beb;
+        max-width: 1120px;
         margin-left: auto;
         margin-right: auto;
+        overflow: hidden;
     }
     .text-black {
         color: #222 !important;
     }
     &:after {
-        content: "";
-        position: absolute;
-        height: 100%;
-        width: 100%;
-        left: 0;
-        top: 0;
-        background: rgba(0, 0, 0, 0.3);
-        z-index: -1;
+        content: none;
     }
     @include respond("tab-port") {
         padding: 50px;
@@ -125,51 +119,34 @@
 
 .login-wrapper {
     display: flex;
-    min-height: 600px;
-    height: calc(100vh - 200px);
+    min-height: 640px;
+    height: calc(100vh - 90px);
     box-shadow: 0 0 60px 10px rgba(85, 44, 44, 0.2);
 
     .login-aside-left {
         max-width: 50%;
         flex: 0 0 50%;
         position: relative;
-        display: table;
-        padding: 50px;
+        display: flex;
+        flex-direction: column;
+        padding: 36px 34px;
         z-index: 1;
-        background-size: cover;
-        background-repeat: no-repeat;
-        background-position: bottom;
-        background-color: #fff;
+        background-color: #e3e3e3;
         &:after {
-            position: absolute;
-            top: 0;
-            left: 0;
-            height: 100%;
-            width: 100%;
-            z-index: -1;
-            content: "";
-            /* Permalink - use to edit and share this gradient: https://colorzilla.com/gradient-editor/#ffffff+0,ffffff+100&0+0,1+100 */
-            background: -moz-linear-gradient(
-                top,
-                rgba(255, 255, 255, 0) 0%,
-                rgba(255, 255, 255, 1) 100%
-            ); /* FF3.6-15 */
-            background: -webkit-linear-gradient(
-                top,
-                rgba(255, 255, 255, 0) 0%,
-                rgba(255, 255, 255, 1) 100%
-            ); /* Chrome10-25,Safari5.1-6 */
-            background: linear-gradient(
-                to bottom,
-                rgba(255, 255, 255, 0) 0%,
-                rgba(255, 255, 255, 1) 100%
-            ); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
-            filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00ffffff', endColorstr='#ffffff',GradientType=0 ); /* IE6-9 */
+            content: none;
         }
         .login-description {
-            display: table-cell;
-            vertical-align: bottom;
-            padding-bottom: 40px;
+            margin-top: 22px;
+            max-width: 460px;
+            display: flex;
+            flex-direction: column;
+            flex: 1;
+            p {
+                font-size: 24px;
+                line-height: 1.35;
+                font-weight: 700;
+                margin-bottom: 0;
+            }
         }
     }
     .login-aside-right {
@@ -200,7 +177,42 @@
     }
 
     .login-logo {
-        position: absolute;
+        display: inline-block;
+        width: 420px;
+        max-width: 100%;
+    }
+    .romeo-logo {
+        width: 100%;
+        max-width: 420px;
+        height: auto;
+        mix-blend-mode: multiply;
+    }
+    .powered-by-block {
+        margin-top: auto;
+        padding-top: 28px;
+    }
+    .powered-by-block h6 {
+        font-size: 16px;
+        font-weight: 700;
+    }
+    .powered-by-logo {
+        width: 190px;
+        max-width: 100%;
+        height: auto;
+    }
+    .btn.text-primary {
+        color: #8c9e43 !important;
+    }
+    .form-check-input {
+        border-color: #8c9e43;
+    }
+    .form-check-input:checked {
+        background-color: #8c9e43;
+        border-color: #8c9e43;
+    }
+    .form-control:focus {
+        border-color: #8c9e43;
+        box-shadow: 0 0 0 0.2rem rgba(140, 158, 67, 0.25);
     }
     .authincation-content {
         background-color: transparent;
@@ -245,6 +257,9 @@
             width: 100%;
             display: block;
         }
+        .powered-by-block {
+            margin-top: 36px;
+        }
 
         .authincation-content {
             padding: 30px 10px;
@@ -255,6 +270,9 @@
             padding: 50px 30px;
             .login-description {
                 padding-bottom: 0;
+                p {
+                    font-size: 18px;
+                }
             }
         }
         h2,

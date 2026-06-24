@@ -13,16 +13,16 @@ function resolveApiBaseUrl() {
   if (typeof window !== "undefined" && window.location) {
     const { hostname, port } = window.location;
     const isLocalHost = hostname === "localhost" || hostname === "127.0.0.1";
-    // In local development the backend runs on :3000 while frontend may run on :3001.
+    // In local development the backend runs on :4195 while the dev server uses another port.
     // Use backend origin directly so uploaded file links (/public/uploads/...) download correctly.
-    if (isLocalHost && port && port !== "3000") {
-      return "http://127.0.0.1:3000";
+    if (isLocalHost && port && port !== "4195") {
+      return "http://127.0.0.1:4195";
     }
   }
   if (typeof window !== "undefined" && window.location?.origin) {
     return window.location.origin.replace(/\/+$/, "");
   }
-  return "http://localhost:3000";
+  return "http://localhost:4195";
 }
 
 export const API_BASE_URL = resolveApiBaseUrl();

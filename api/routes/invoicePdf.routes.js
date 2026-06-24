@@ -1,8 +1,8 @@
 const express = require("express");
 const mongoose = require("mongoose");
 const multer = require("multer");
-const { PDFParse } = require("pdf-parse");
-const { extractInvoiceFields } = require("../services/invoiceExtractor");
+const { extractInvoiceFields, INVOICE_EXTRACTOR_VERSION } = require("../services/invoiceExtractor");
+const { extractTextFromPdfBuffer } = require("../services/pdfTextExtract.service");
 const { parseMoneyToNumber } = require("../utils/invoiceMoney");
 const { buildInvoiceSummaryPdf } = require("../services/invoicePdfExport");
 const BusinessOrderInvoice = require("../models/businessOrderInvoice.model");
@@ -18,6 +18,14 @@ const { checkPermission } = require("../middlewares/permission.middleware");
 const STANDARD_RATE_PERCENT = 5;
 
 const router = express.Router();
+
+/** Deploy check — open while logged in: GET /api/invoice-pdf/version */
+router.get("/version", (_req, res) => {
+  res.json({
+    extractorVersion: INVOICE_EXTRACTOR_VERSION,
+    ok: true,
+  });
+});
 
 router.use(auth);
 
@@ -58,7 +66,6 @@ async function resolveProjectFromUploadBody(body) {
 }
 
 router.post("/upload", checkPermission("so", "add"), upload.single("invoice"), async (req, res) => {
-  let parser;
   try {
     if (!req.file) {
       return res.status(400).json({ error: "Please upload a PDF file." });
@@ -72,23 +79,35 @@ router.post("/upload", checkPermission("so", "add"), upload.single("invoice"), a
     const boNoFromBody =
       req.body?.boNo != null ? String(req.body.boNo).trim().slice(0, 128) : "";
 
-    parser = new PDFParse({ data: req.file.buffer });
+    let rawText = "";
+    let pagesParsed = 1;
+    let textLength = 0;
+    try {
+      const extractedText = await extractTextFromPdfBuffer(req.file.buffer);
+      rawText = extractedText.rawText;
+      pagesParsed = extractedText.pagesParsed;
+      textLength = extractedText.textLength || rawText.length;
+    } catch (parseErr) {
+      console.error("[invoice-pdf/upload] PDF text extraction failed:", parseErr?.message || parseErr);
+      return res.status(400).json({
+        error: parseErr?.message || "Failed to read PDF text. Please check the file and try again.",
+      });
+    }
 
-    const info = await parser.getInfo();
-    const totalPages = Number(info?.total) || 0;
-    const parseParams =
-      totalPages > 0
-        ? { partial: Array.from({ length: totalPages }, (_item, index) => index + 1) }
-        : undefined;
+    let extracted;
+    try {
+      extracted = extractInvoiceFields(rawText);
+    } catch (extractErr) {
+      console.error("[invoice-pdf/upload] Field extraction failed:", extractErr?.message || extractErr);
+      return res.status(500).json({
+        error: "Failed to parse invoice fields from PDF text.",
+      });
+    }
 
-    const textResult = await parser.getText(parseParams);
-    const rawText =
-      (Array.isArray(textResult?.pages) && textResult.pages.length
-        ? textResult.pages.map((page) => page.text || "").join("\n")
-        : textResult?.text) || "";
-
-    const extracted = extractInvoiceFields(rawText);
-    const pagesParsed = totalPages || textResult?.pages?.length || 1;
+    const scopeCount = Array.isArray(extracted.scopeOfWork) ? extracted.scopeOfWork.length : 0;
+    console.log(
+      `[invoice-pdf/upload] extractor=${INVOICE_EXTRACTOR_VERSION} pages=${pagesParsed} textLen=${textLength} scopeItems=${scopeCount} file=${req.file.originalname || "invoice.pdf"}`,
+    );
 
     const subtotalNum = parseMoneyToNumber(extracted.subtotal);
     const totalNum = parseMoneyToNumber(extracted.totalAmount);
@@ -162,6 +181,8 @@ router.post("/upload", checkPermission("so", "add"), upload.single("invoice"), a
       standardRatePercent: STANDARD_RATE_PERCENT,
       standardRateAmount: standardRateAmtNum,
       totalAmount: totalNum,
+      termsAndConditions:
+        extracted.termsAndConditions === "Not Found" ? "" : extracted.termsAndConditions || "",
       scopeOfWork: Array.isArray(extracted.scopeOfWork) ? extracted.scopeOfWork : [],
       uploadedPdf: req.file.buffer,
       hasUploadedPdf: true,
@@ -170,6 +191,9 @@ router.post("/upload", checkPermission("so", "add"), upload.single("invoice"), a
     return res.json({
       ...extracted,
       pagesParsed,
+      scopeItemCount: scopeCount,
+      extractorVersion: INVOICE_EXTRACTOR_VERSION,
+      pdfTextLength: textLength,
       savedId: doc._id,
       clientId: linkedClientId,
       projectId: doc.projectId ? String(doc.projectId) : null,
@@ -194,10 +218,6 @@ router.post("/upload", checkPermission("so", "add"), upload.single("invoice"), a
     return res.status(500).json({
       error: error.message || "Failed to parse PDF or save record.",
     });
-  } finally {
-    if (parser) {
-      await parser.destroy();
-    }
   }
 });
 
@@ -240,6 +260,7 @@ function docToClientShape(doc) {
     standardRateAmount:
       doc.standardRateAmount != null ? String(doc.standardRateAmount) : "",
     totalAmount: doc.totalAmount != null ? String(doc.totalAmount) : "",
+    termsAndConditions: doc.termsAndConditions ?? "",
     scopeOfWork: doc.scopeOfWork || [],
     pagesParsed: doc.pagesParsed,
     savedId: doc._id,
@@ -493,6 +514,9 @@ router.patch("/:id", checkPermission("so", "update"), async (req, res) => {
       const r = Number(body.standardRatePercent);
       if (Number.isFinite(r)) updates.standardRatePercent = r;
     }
+    if (body.termsAndConditions !== undefined) {
+      updates.termsAndConditions = String(body.termsAndConditions).trim().slice(0, 8000);
+    }
     if (body.scopeOfWork !== undefined) {
       if (!Array.isArray(body.scopeOfWork)) {
         return res.status(400).json({ error: "scopeOfWork must be an array." });
@@ -501,6 +525,7 @@ router.patch("/:id", checkPermission("so", "update"), async (req, res) => {
         title: String(item?.title ?? ""),
         details: Array.isArray(item?.details) ? item.details.map((d) => String(d)) : [],
         departmentId: String(item?.departmentId ?? "").trim().slice(0, 64),
+        vendorId: String(item?.vendorId ?? "").trim().slice(0, 64),
         taxAmount: parseNumberOrNull(item?.taxAmount),
         totalAmount: parseNumberOrNull(item?.totalAmount),
       }));

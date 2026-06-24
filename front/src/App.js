@@ -3,7 +3,7 @@ import { lazy, Suspense, useEffect } from 'react';
 /// Components
 import Index from "./jsx";
 import { connect, useDispatch } from 'react-redux';
-import { Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
+import { Navigate, Route, Routes, useLocation, useNavigate, useParams } from 'react-router-dom';
 // action
 import { checkAutoLogin } from './services/AuthService';
 import { isAuthenticated } from './store/selectors/AuthSelectors';
@@ -37,48 +37,41 @@ function App(props) {
         checkAutoLogin(dispatch, navigate);
     }, [dispatch, navigate]);
 
-    let routeblog = (
-        <Routes>
-            <Route path='/login' element={<Login />} />
-            <Route path='/page-register' element={<SignUp />} />
-        </Routes>
+    const fallback = (
+        <div id="preloader">
+            <div className="sk-three-bounce">
+                <div className="sk-child sk-bounce1"></div>
+                <div className="sk-child sk-bounce2"></div>
+                <div className="sk-child sk-bounce3"></div>
+            </div>
+        </div>
     );
+
     if (props.isAuthenticated) {
         return (
-            <>
-                <Suspense fallback={
-                    <div id="preloader">
-                        <div className="sk-three-bounce">
-                            <div className="sk-child sk-bounce1"></div>
-                            <div className="sk-child sk-bounce2"></div>
-                            <div className="sk-child sk-bounce3"></div>
-                        </div>
-                    </div>
-                }
-                >
-                    <Index />
-                </Suspense>
-            </>
-        );
-
-    } else {
-        return (
-            <div className="vh-100">
-                <Suspense fallback={
-                    <div id="preloader">
-                        <div className="sk-three-bounce">
-                            <div className="sk-child sk-bounce1"></div>
-                            <div className="sk-child sk-bounce2"></div>
-                            <div className="sk-child sk-bounce3"></div>
-                        </div>
-                    </div>
-                }
-                >
-                    {routeblog}
-                </Suspense>
-            </div>
+            <Suspense fallback={fallback}>
+                <Routes>
+                    <Route path="/" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/login" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/page-register" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/*" element={<Index />} />
+                </Routes>
+            </Suspense>
         );
     }
+
+    return (
+        <div className="vh-100">
+            <Suspense fallback={fallback}>
+                <Routes>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/page-register" element={<SignUp />} />
+                    <Route path="/" element={<Navigate to="/login" replace />} />
+                    <Route path="*" element={<Navigate to="/login" replace />} />
+                </Routes>
+            </Suspense>
+        </div>
+    );
 };
 
 

@@ -30,6 +30,8 @@ function appendVendorFields(formData, payload) {
   formData.append("regularContactPhone", payload.regularContactPhone ?? "");
   formData.append("regularContactAddress", payload.regularContactAddress ?? "");
   formData.append("vendorAddress", payload.vendorAddress ?? "");
+  formData.append("description", payload.description ?? "");
+  formData.append("currency", payload.currency ?? "");
   formData.append("country", payload.country ?? "");
   formData.append("taxRate", payload.taxRate ?? "");
   formData.append("licenseNo", payload.licenseNo ?? "");
@@ -37,17 +39,20 @@ function appendVendorFields(formData, payload) {
   formData.append("taxCertificate", String(Boolean(payload.taxCertificate)));
 }
 
+function appendMultiDocFiles(formData, fieldName, files) {
+  if (!files || !files.length) return;
+  for (let i = 0; i < files.length; i++) {
+    if (files[i] instanceof File) {
+      formData.append(fieldName, files[i]);
+    }
+  }
+}
+
 export async function createVendor(payload) {
   const formData = new FormData();
   appendVendorFields(formData, payload);
-  const files = payload.companyRegistrationDocs;
-  if (files && files.length) {
-    for (let i = 0; i < files.length; i++) {
-      if (files[i] instanceof File) {
-        formData.append("companyRegistrationDocs", files[i]);
-      }
-    }
-  }
+  appendMultiDocFiles(formData, "companyRegistrationDocs", payload.companyRegistrationDocs);
+  appendMultiDocFiles(formData, "bankDetailsDocs", payload.bankDetailsDocs);
   if (payload.licenseUpload instanceof File) {
     formData.append("licenseUpload", payload.licenseUpload);
   }
@@ -72,14 +77,14 @@ export async function updateVendor(id, payload) {
       JSON.stringify(payload.companyRegistrationDocsRetain)
     );
   }
-  const files = payload.companyRegistrationDocs;
-  if (files && files.length) {
-    for (let i = 0; i < files.length; i++) {
-      if (files[i] instanceof File) {
-        formData.append("companyRegistrationDocs", files[i]);
-      }
-    }
+  if (Array.isArray(payload.bankDetailsDocsRetain)) {
+    formData.append(
+      "bankDetailsDocsRetain",
+      JSON.stringify(payload.bankDetailsDocsRetain)
+    );
   }
+  appendMultiDocFiles(formData, "companyRegistrationDocs", payload.companyRegistrationDocs);
+  appendMultiDocFiles(formData, "bankDetailsDocs", payload.bankDetailsDocs);
   if (payload.licenseUploadRetain !== undefined) {
     formData.append("licenseUploadRetain", String(Boolean(payload.licenseUploadRetain)));
   }

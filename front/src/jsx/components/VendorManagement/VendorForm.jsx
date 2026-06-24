@@ -1,10 +1,78 @@
 import React, { Fragment, useState, useEffect } from "react";
 import { Formik } from "formik";
+import Select, { components } from "react-select";
 import BomTextarea from "../common/BomTextarea";
 import { getVendorDocUrl } from "../../../services/vendorApi";
 import "./VendorManagement.css";
 
 const fg = "form-group mb-3";
+
+const VENDOR_CURRENCY_OPTIONS = [
+  { value: "USD", label: "US Dollar", symbol: "$" },
+  { value: "EUR", label: "Euro", symbol: "€" },
+  { value: "GBP", label: "British Pound", symbol: "£" },
+  { value: "INR", label: "Indian Rupee", symbol: "₹" },
+  { value: "AED", label: "UAE Dirham", symbol: "د.إ" },
+  { value: "EGP", label: "Egyptian Pound", symbol: "E£" },
+  { value: "AUD", label: "Australian Dollar", symbol: "A$" },
+  { value: "CAD", label: "Canadian Dollar", symbol: "C$" },
+  { value: "CHF", label: "Swiss Franc", symbol: "CHF" },
+  { value: "CNY", label: "Chinese Yuan", symbol: "¥" },
+  { value: "JPY", label: "Japanese Yen", symbol: "¥" },
+  { value: "SGD", label: "Singapore Dollar", symbol: "S$" },
+  { value: "HKD", label: "Hong Kong Dollar", symbol: "HK$" },
+  { value: "SAR", label: "Saudi Riyal", symbol: "﷼" },
+  { value: "ZAR", label: "South African Rand", symbol: "R" },
+];
+
+const currencySelectStyles = {
+  control: (base, state) => ({
+    ...base,
+    borderColor: state.isFocused ? "#6418c3" : "#ced4da",
+    borderTopLeftRadius: 0,
+    borderBottomLeftRadius: 0,
+    boxShadow: state.isFocused ? "0 0 0 0.2rem rgba(100,24,195,.15)" : "none",
+    "&:hover": { borderColor: "#6418c3" },
+    minHeight: "calc(1.5em + 0.75rem + 2px)",
+    fontSize: "0.875rem",
+  }),
+  menu: (base) => ({ ...base, zIndex: 9999 }),
+  option: (base, state) => ({
+    ...base,
+    backgroundColor: state.isSelected
+      ? "#6418c3"
+      : state.isFocused
+        ? "rgba(100,24,195,.08)"
+        : "white",
+    color: state.isSelected ? "#fff" : "#212529",
+    fontSize: "0.875rem",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+  }),
+  placeholder: (base) => ({ ...base, color: "#6c757d" }),
+  singleValue: (base) => ({ ...base, color: "#212529", display: "flex", alignItems: "center", gap: "8px" }),
+};
+
+const CurrencyOption = (props) => (
+  <components.Option {...props}>
+    <span className="vendor-currency-symbol">{props.data.symbol}</span>
+    <span>
+      {props.data.value} — {props.data.label}
+    </span>
+  </components.Option>
+);
+
+const CurrencySingleValue = (props) => (
+  <components.SingleValue {...props}>
+    <span className="vendor-currency-symbol vendor-currency-symbol--selected">
+      {props.data.symbol}
+    </span>
+    <span>
+      {props.data.value} — {props.data.label}
+    </span>
+  </components.SingleValue>
+);
 
 /** Open a local File in a new tab (PDF/images work with the browser viewer). */
 function openBlobFileInNewTab(file) {
@@ -26,6 +94,8 @@ const VendorForm = ({
 }) => {
   const [filesToUpload, setFilesToUpload] = useState([]);
   const [retainedDocs, setRetainedDocs] = useState([]);
+  const [bankFilesToUpload, setBankFilesToUpload] = useState([]);
+  const [retainedBankDocs, setRetainedBankDocs] = useState([]);
   const [licenseUploadFile, setLicenseUploadFile] = useState(null);
   const [retainedLicenseUpload, setRetainedLicenseUpload] = useState(null);
   const [taxLaterCertificateFile, setTaxLaterCertificateFile] = useState(null);
@@ -34,13 +104,17 @@ const VendorForm = ({
   useEffect(() => {
     const docs = initialValues?.companyRegistrationDocs;
     setRetainedDocs(Array.isArray(docs) ? [...docs] : []);
+    const bankDocs = initialValues?.bankDetailsDocs;
+    setRetainedBankDocs(Array.isArray(bankDocs) ? [...bankDocs] : []);
     setRetainedLicenseUpload(initialValues?.licenseUpload || null);
     setRetainedTaxLaterCertificate(initialValues?.taxLaterCertificate || null);
     setFilesToUpload([]);
+    setBankFilesToUpload([]);
     setLicenseUploadFile(null);
     setTaxLaterCertificateFile(null);
   }, [
     initialValues?.companyRegistrationDocs,
+    initialValues?.bankDetailsDocs,
     initialValues?.licenseUpload,
     initialValues?.taxLaterCertificate,
     initialValues?._id,
@@ -58,6 +132,8 @@ const VendorForm = ({
     regularContactPhone: "",
     regularContactAddress: "",
     vendorAddress: "",
+    description: "",
+    currency: "",
     country: "",
     taxRate: "",
     licenseNo: "",
@@ -74,12 +150,28 @@ const VendorForm = ({
     e.target.value = "";
   };
 
+  const handleAddBankFiles = (e) => {
+    const picked = Array.from(e.target.files || []);
+    if (picked.length) {
+      setBankFilesToUpload((prev) => [...prev, ...picked]);
+    }
+    e.target.value = "";
+  };
+
   const removeNewFile = (index) => {
     setFilesToUpload((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const removeNewBankFile = (index) => {
+    setBankFilesToUpload((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const removeRetained = (path) => {
     setRetainedDocs((prev) => prev.filter((d) => d.path !== path));
+  };
+
+  const removeRetainedBank = (path) => {
+    setRetainedBankDocs((prev) => prev.filter((d) => d.path !== path));
   };
 
   return (
@@ -94,6 +186,8 @@ const VendorForm = ({
               ...values,
               companyRegistrationDocs: filesToUpload,
               companyRegistrationDocsRetain: retainedDocs.map((d) => d.path),
+              bankDetailsDocs: bankFilesToUpload,
+              bankDetailsDocsRetain: retainedBankDocs.map((d) => d.path),
               licenseUpload: licenseUploadFile,
               licenseUploadRetain: Boolean(retainedLicenseUpload),
               taxLaterCertificate: taxLaterCertificateFile,
@@ -110,7 +204,13 @@ const VendorForm = ({
           handleSubmit,
           isSubmitting,
           resetForm,
-        }) => (
+          setFieldValue,
+          setFieldTouched,
+        }) => {
+          const selectedCurrency =
+            VENDOR_CURRENCY_OPTIONS.find((o) => o.value === values.currency) || null;
+
+          return (
           <form onSubmit={handleSubmit}>
             <div className="row g-3">
               <div className="col-12">
@@ -171,6 +271,58 @@ const VendorForm = ({
                       onBlur={handleBlur}
                       variant="scope"
                     />
+                  </div>
+                </div>
+                <div className={fg}>
+                  <label className="text-label">Description</label>
+                  <div className="input-group align-items-start">
+                    <span className="input-group-text">
+                      <i className="fa fa-align-left" />
+                    </span>
+                    <BomTextarea
+                      className="flex-grow-1"
+                      name="description"
+                      rows={3}
+                      placeholder="Brief description of the vendor or services"
+                      value={values.description}
+                      onChange={handleChange}
+                      onBlur={handleBlur}
+                      variant="scope"
+                    />
+                  </div>
+                </div>
+                <div className={fg}>
+                  <label className="text-label">Currency</label>
+                  <div className="input-group vendor-currency-select">
+                    <span className="input-group-text vendor-currency-prefix">
+                      {selectedCurrency ? (
+                        <span className="vendor-currency-symbol vendor-currency-symbol--prefix">
+                          {selectedCurrency.symbol}
+                        </span>
+                      ) : (
+                        <i className="fa fa-money" />
+                      )}
+                    </span>
+                    <div className="flex-grow-1">
+                      <Select
+                        inputId="currency"
+                        options={VENDOR_CURRENCY_OPTIONS}
+                        value={selectedCurrency}
+                        onChange={(opt) => {
+                          setFieldValue("currency", opt ? opt.value : "");
+                          setFieldTouched("currency", true);
+                        }}
+                        onBlur={() => setFieldTouched("currency", true)}
+                        placeholder="Select currency"
+                        isClearable
+                        styles={currencySelectStyles}
+                        components={{
+                          Option: CurrencyOption,
+                          SingleValue: CurrencySingleValue,
+                        }}
+                        noOptionsMessage={() => "No currencies found"}
+                      />
+                    </div>
                   </div>
                 </div>
                 <div className={fg}>
@@ -495,6 +647,122 @@ const VendorForm = ({
               <div className="col-12">
                 <hr className="my-3" />
                 <h6 className="text-primary mb-2">
+                  <i className="fa fa-university me-2" />
+                  Bank details documents
+                </h6>
+                <p className="text-muted small mb-2">
+                  Upload cancelled cheques, bank statements, or other bank detail files. You may attach multiple files.
+                </p>
+                <div className={fg}>
+                  <input
+                    type="file"
+                    className="form-control"
+                    multiple
+                    accept=".pdf,.png,.jpg,.jpeg,.gif,.webp,.doc,.docx"
+                    onChange={handleAddBankFiles}
+                  />
+                </div>
+
+                {retainedBankDocs.length > 0 && (
+                  <ul className="list-group mb-3 vendor-doc-list">
+                    {retainedBankDocs.map((doc) => (
+                      <li
+                        key={doc.path}
+                        className="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2 vendor-doc-item"
+                      >
+                        <span className="text-truncate me-2 flex-grow-1 min-w-0" title={doc.originalName}>
+                          <i className="fa fa-paperclip me-2 text-muted" />
+                          {doc.originalName || doc.path}
+                        </span>
+                        <div className="d-flex gap-1 flex-shrink-0 vendor-doc-actions">
+                          <a
+                            className="btn btn-outline-primary vendor-doc-action-btn"
+                            title="Preview in new tab"
+                            href={getVendorDocUrl(doc.path) || "#"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            onClick={(e) => {
+                              if (!getVendorDocUrl(doc.path)) e.preventDefault();
+                            }}
+                          >
+                            <i className="fa fa-eye" aria-hidden />
+                          </a>
+                          <a
+                            className="btn btn-outline-secondary vendor-doc-action-btn"
+                            title="Download file"
+                            href={getVendorDocUrl(doc.path) || "#"}
+                            download={doc.originalName || "document"}
+                            onClick={(e) => {
+                              if (!getVendorDocUrl(doc.path)) e.preventDefault();
+                            }}
+                          >
+                            <i className="fa fa-download" aria-hidden />
+                          </a>
+                          <button
+                            type="button"
+                            className="btn btn-outline-danger vendor-doc-action-btn"
+                            title="Delete file"
+                            onClick={() => removeRetainedBank(doc.path)}
+                          >
+                            <i className="fa fa-trash" aria-hidden />
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+
+                {bankFilesToUpload.length > 0 && (
+                  <ul className="list-group mb-3 vendor-doc-list">
+                    {bankFilesToUpload.map((file, idx) => (
+                      <li
+                        key={`bank-${file.name}-${idx}`}
+                        className="list-group-item d-flex flex-wrap justify-content-between align-items-center gap-2 vendor-doc-item"
+                      >
+                        <span className="text-truncate me-2 flex-grow-1 min-w-0">
+                          <i className="fa fa-plus-circle me-2 text-success" />
+                          {file.name}{" "}
+                          <small className="text-muted">(new)</small>
+                        </span>
+                        <div className="d-flex gap-1 flex-shrink-0 vendor-doc-actions">
+                          <button
+                            type="button"
+                            className="btn btn-outline-primary vendor-doc-action-btn"
+                            title="Preview in new tab"
+                            onClick={() => openBlobFileInNewTab(file)}
+                          >
+                            <i className="fa fa-eye" aria-hidden />
+                          </button>
+                          <a
+                            href={URL.createObjectURL(file)}
+                            download={file.name || "document"}
+                            className="btn btn-outline-secondary vendor-doc-action-btn"
+                            title="Download file"
+                            onClick={(e) => {
+                              const url = e.currentTarget.href;
+                              setTimeout(() => URL.revokeObjectURL(url), 120000);
+                            }}
+                          >
+                            <i className="fa fa-download" aria-hidden />
+                          </a>
+                          <button
+                            type="button"
+                            className="btn btn-outline-danger vendor-doc-action-btn"
+                            title="Delete file"
+                            onClick={() => removeNewBankFile(idx)}
+                          >
+                            <i className="fa fa-trash" aria-hidden />
+                          </button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </div>
+
+              <div className="col-12">
+                <hr className="my-3" />
+                <h6 className="text-primary mb-2">
                   <i className="fa fa-file-text me-2" />
                   Company registration documents
                 </h6>
@@ -635,7 +903,9 @@ const VendorForm = ({
                       onClick={() => {
                         resetForm();
                         setFilesToUpload([]);
+                        setBankFilesToUpload([]);
                         setRetainedDocs([]);
+                        setRetainedBankDocs([]);
                         setLicenseUploadFile(null);
                         setTaxLaterCertificateFile(null);
                         setRetainedLicenseUpload(null);
@@ -658,7 +928,8 @@ const VendorForm = ({
               </div>
             </div>
           </form>
-        )}
+          );
+        }}
       </Formik>
       </div>
     </Fragment>

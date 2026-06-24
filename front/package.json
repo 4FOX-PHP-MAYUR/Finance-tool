@@ -2,10 +2,11 @@
   "name": "finance-tool",
   "version": "0.1.0",
   "description": "Finance tool",
-  "homepage": "https://koki.dexignzone.com/react/demo",
+  "homepage": "",
   "private": true,
-  "proxy": "http://127.0.0.1:3000",
+  "proxy": "http://127.0.0.1:4195",
   "dependencies": {
+    "@craco/craco": "^7.1.0",
     "@ckeditor/ckeditor5-build-classic": "^40.2.0",
     "@ckeditor/ckeditor5-react": "^6.2.0",
     "@fullcalendar/daygrid": "^6.1.8",
@@ -66,9 +67,11 @@
     "yup": "^1.2.0"
   },
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test",
+    "prestart": "node -e \"try{require('fs').rmSync(require('path').join('node_modules','.cache'),{recursive:true,force:true})}catch(_){}\"",
+    "prebuild": "node -e \"try{require('fs').rmSync(require('path').join('node_modules','.cache'),{recursive:true,force:true})}catch(_){}\"",
+    "start": "craco start",
+    "build": "craco build",
+    "test": "craco test",
     "eject": "react-scripts eject",
     "sass": "sass --watch src/scss/main.scss src/css/style.css --source-map"
   },

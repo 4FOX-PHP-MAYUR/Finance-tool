@@ -1,6 +1,6 @@
 /**
  * User Management API Service
- * Base URL: http://localhost:3000/api/users
+ * Base URL: http://localhost:4195/api/users
  *
  * Soft delete is implemented via DELETE /api/users/:id
  * (backend sets isDeleted: true / deletedAt on the record).

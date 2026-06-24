@@ -11,12 +11,7 @@ const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(
   <React.StrictMode>
     <Provider store = {store}>
-      <BrowserRouter
-        basename={(process.env.REACT_APP_ROUTER_BASENAME || process.env.PUBLIC_URL || "").replace(
-          /\/$/,
-          ""
-        )}
-      >
+      <BrowserRouter>
         <ThemeContext>
           <App />
         </ThemeContext>

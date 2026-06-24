@@ -6,6 +6,8 @@ const scopeItemSchema = new mongoose.Schema(
     details: [{ type: String }],
     /** Department selected for this deliverable block. */
     departmentId: { type: String, default: "", trim: true, maxlength: 64 },
+    /** Vendor selected for this deliverable block (used to pre-fill Assign vendor). */
+    vendorId: { type: String, default: "", trim: true, maxlength: 64 },
     taxAmount: { type: Number, default: null },
     /** Line total for this SOW block (distinct from invoice-level totalAmount). */
     totalAmount: { type: Number, default: null },
@@ -55,6 +57,8 @@ const businessOrderInvoiceSchema = new mongoose.Schema(
     standardRatePercent: { type: Number, default: 5 },
     standardRateAmount: { type: Number, default: null },
     totalAmount: { type: Number, default: null },
+    /** Terms & conditions text extracted from PDF or edited after upload. */
+    termsAndConditions: { type: String, default: "", maxlength: 8000, trim: true },
     scopeOfWork: {
       type: [scopeItemSchema],
       default: [],

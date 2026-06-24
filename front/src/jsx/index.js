@@ -148,7 +148,10 @@ import Todo from './pages/Todo';
 import MyProfile from './components/Profile/MyProfile';
 
 import { ThemeContext } from "../context/ThemeContext";
-import { fetchMyPermissions } from "../services/permissionService";
+import {
+  fetchMyPermissions,
+  canViewModule,
+} from "../services/permissionService";
 //Scroll To Top
 import ScrollToTop from './layouts/ScrollToTop';
 
@@ -200,11 +203,11 @@ const Markup = () => {
     { url: 'assign-vendor-finance-bulk-edit', component: <AssignVendorFinanceBulkEdit/> },
     { url: 'assign-vendor-hod-review', component: <AssignVendorHodReviewList/>, moduleKey: "vendor_hod_review" },
     { url: 'assign-vendor-finance-review', component: <AssignVendorFinanceReviewList/>, moduleKey: "vendor_finance_review" },
-    { url: 'assign-vendor-admin-approval', component: <AssignVendorAdminApprovalList/>, moduleKey: "assigned_vendors" },
+    { url: 'assign-vendor-admin-approval', component: <AssignVendorAdminApprovalList/>, moduleKey: "vendor_admin_approval" },
 
     /// User Management (mock)
-    { url: 'mgmt-user-add', component: <AddUserMgmt/> },
-    { url: 'mgmt-user-list', component: <UserMgmtList/> },
+    { url: 'mgmt-user-add', component: <AddUserMgmt/>, moduleKey: "users_add" },
+    { url: 'mgmt-user-list', component: <UserMgmtList/>, moduleKey: "users_list" },
 
     /// Department Management (mock)
     { url: 'department-add', component: <AddDepartment/>, moduleKey: "departments" },
@@ -340,32 +343,22 @@ function MainLayout(){
 
 function PermissionProtected({ moduleKey, children }) {
   const [loading, setLoading] = useState(Boolean(moduleKey));
-  const [allowedKeys, setAllowedKeys] = useState(null);
+  const [permDoc, setPermDoc] = useState(null);
 
   useEffect(() => {
     let cancelled = false;
     if (!moduleKey) {
       setLoading(false);
-      setAllowedKeys(null);
+      setPermDoc(null);
       return () => {};
     }
     fetchMyPermissions()
       .then((doc) => {
         if (cancelled) return;
-        if (!doc?.assigned) {
-          setAllowedKeys(null);
-          return;
-        }
-        const keys = new Set(
-          (doc.permissions || [])
-            .filter((p) => Boolean(p?.access?.view))
-            .map((p) => String(p.moduleName || "").toLowerCase().trim())
-            .filter(Boolean)
-        );
-        setAllowedKeys(keys);
+        setPermDoc(doc || null);
       })
       .catch(() => {
-        if (!cancelled) setAllowedKeys(null);
+        if (!cancelled) setPermDoc(null);
       })
       .finally(() => {
         if (!cancelled) setLoading(false);
@@ -377,9 +370,12 @@ function PermissionProtected({ moduleKey, children }) {
 
   const allowed = useMemo(() => {
     if (!moduleKey) return true;
-    if (allowedKeys == null) return true;
-    return allowedKeys.has(String(moduleKey).toLowerCase().trim());
-  }, [allowedKeys, moduleKey]);
+    return canViewModule(
+      Boolean(permDoc?.assigned),
+      permDoc?.permissions,
+      moduleKey
+    );
+  }, [permDoc, moduleKey]);
 
   if (loading) {
     return (

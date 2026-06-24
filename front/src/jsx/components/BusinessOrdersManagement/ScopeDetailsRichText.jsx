@@ -11,49 +11,41 @@ function textToLines(text) {
 }
 
 /**
- * Plain multi-line editor for scope details (no toolbar). Syncs local text when `resetKey` changes.
+ * Plain multi-line editor for scope details. Shows extracted/uploaded lines from props;
+ * keeps local edits until the details content from props changes (new upload / load).
  */
-export default function ScopeDetailsRichText({ details, onDetailsChange, resetKey, editorId }) {
-  const [text, setText] = useState(() => linesToText(details));
-  const detailsRef = useRef(details);
+export default function ScopeDetailsRichText({ details, onDetailsChange, editorId }) {
+  const propText = linesToText(details);
+  const [editedText, setEditedText] = useState(null);
   const textareaRef = useRef(null);
-  detailsRef.current = details;
+  const displayText = editedText != null ? editedText : propText;
 
   const syncTextareaHeight = () => {
     const el = textareaRef.current;
     if (!el) return;
     el.style.height = "auto";
-    el.style.height = `${el.scrollHeight}px`;
+    el.style.height = `${Math.max(el.scrollHeight, 120)}px`;
   };
 
   useEffect(() => {
-    setText(linesToText(detailsRef.current));
-  }, [resetKey]);
+    setEditedText(null);
+  }, [propText]);
 
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.style.height = "";
-    }
-    // Sync after reset.
     requestAnimationFrame(syncTextareaHeight);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [resetKey]);
-
-  useEffect(() => {
-    syncTextareaHeight();
-  }, [text]);
+  }, [displayText]);
 
   return (
     <textarea
       ref={textareaRef}
       id={editorId}
       className="bom-textarea form-control form-control-sm bom-scope-details-textarea"
-      rows={15}
+      rows={6}
       placeholder="Details (one line per bullet)"
-      value={text}
+      value={displayText}
       onChange={(e) => {
         const t = e.target.value;
-        setText(t);
+        setEditedText(t);
         onDetailsChange(textToLines(t));
       }}
     />

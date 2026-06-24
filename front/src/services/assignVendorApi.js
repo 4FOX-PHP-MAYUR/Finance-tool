@@ -17,6 +17,15 @@ export async function fetchBusinessOrdersForProject(projectId) {
   return data.items ?? [];
 }
 
+export async function fetchBusinessOrderForAssign(businessOrderId) {
+  if (!businessOrderId) return null;
+  const { data } = await axios.get(
+    `${BASE_URL}/business-orders/${encodeURIComponent(businessOrderId)}`,
+    { headers: authHeaders() },
+  );
+  return data;
+}
+
 export async function fetchAssignVendors(params = {}) {
   const { data } = await axios.get(BASE_URL, {
     headers: authHeaders(),

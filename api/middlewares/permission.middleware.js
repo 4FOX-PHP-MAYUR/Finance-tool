@@ -14,6 +14,10 @@ async function warmModuleIdNameCache() {
   );
 }
 
+function invalidateModuleIdNameCache() {
+  moduleIdToNameCache = null;
+}
+
 function effectiveModuleKey(p) {
   const byName = String(p.moduleName || "").trim().toLowerCase();
   if (byName) return byName;
@@ -37,6 +41,7 @@ const LEGACY_COARSE_PARENT = {
   assigned_vendors: "vendors",
   vendor_hod_review: "vendors",
   vendor_finance_review: "vendors",
+  vendor_admin_approval: "vendors",
   projects_add: "projects",
   projects_list: "projects",
 };
@@ -143,6 +148,7 @@ const ASSIGN_VENDOR_MASTER_DATA_ALTS = [
   ["assign_vendor", "add"],
   ["assign_vendor", "update"],
   ["assigned_vendors", "view"],
+  ["vendor_admin_approval", "view"],
 ];
 
 /**
@@ -163,6 +169,7 @@ const USER_DIRECTORY_READ_ALTS = [
   ["assign_vendor", "add"],
   ["assign_vendor", "update"],
   ["assigned_vendors", "view"],
+  ["vendor_admin_approval", "view"],
   ["resource_allocation", "view"],
   ["projects_list", "view"],
   ["projects_add", "view"],
@@ -197,6 +204,7 @@ const DEPARTMENT_DIRECTORY_READ_ALTS = [
   ["assign_vendor", "add"],
   ["assign_vendor", "update"],
   ["assigned_vendors", "view"],
+  ["vendor_admin_approval", "view"],
   ["vendor_hod_review", "view"],
   ["vendor_finance_review", "view"],
 ];
@@ -204,6 +212,7 @@ const DEPARTMENT_DIRECTORY_READ_ALTS = [
 module.exports = {
   checkPermission,
   checkAnyPermission,
+  invalidateModuleIdNameCache,
   ASSIGN_VENDOR_MASTER_DATA_ALTS,
   USER_DIRECTORY_READ_ALTS,
   ROLE_DIRECTORY_READ_ALTS,

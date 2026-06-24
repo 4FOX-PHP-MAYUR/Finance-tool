@@ -33,3 +33,41 @@
   font-size: 11px;
   line-height: 1;
 }
+
+.vendor-form-root .vendor-currency-select .flex-grow-1 {
+  min-width: 0;
+}
+
+.vendor-form-root .vendor-currency-symbol {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  height: 28px;
+  padding: 0 6px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #6418c3 0%, #8b5cf6 100%);
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  flex-shrink: 0;
+  box-shadow: 0 1px 3px rgba(100, 24, 195, 0.25);
+}
+
+.vendor-form-root .vendor-currency-symbol--selected {
+  min-width: 24px;
+  height: 24px;
+  font-size: 12px;
+}
+
+.vendor-form-root .vendor-currency-symbol--prefix {
+  min-width: 32px;
+  height: 32px;
+  font-size: 14px;
+}
+
+.vendor-form-root .vendor-currency-prefix {
+  background: #f8f9fa;
+  border-right: 0;
+}

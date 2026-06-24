@@ -3,8 +3,8 @@
 }
 
 .dashboard-hero {
-  background: linear-gradient(135deg, #6418c3, #7c3aed);
-  color: #f3e8ff;
+  background: linear-gradient(135deg, #8c9e43, #a4b95a);
+  color: #f6faea;
   border-radius: 14px;
   padding: 18px 20px;
   margin-bottom: 14px;
@@ -20,7 +20,7 @@
 }
 
 .dashboard-hero-subtitle {
-  color: #efe7ff;
+  color: #edf4d4;
   font-size: 0.92rem;
 }
 
@@ -52,7 +52,7 @@
 }
 
 .dashboard-kpi-icon {
-  color: #6418c3;
+  color: #8c9e43;
   opacity: 0.95;
 }
 
@@ -66,18 +66,18 @@
 }
 
 .dashboard-btn-gradient {
-  background: linear-gradient(135deg, #6418c3, #7c3aed);
-  border-color: #6418c3;
+  background: linear-gradient(135deg, #8c9e43, #a4b95a);
+  border-color: #8c9e43;
 }
 
 .dashboard-btn-soft {
-  border-color: #d6b8ff;
-  color: #5b21b6;
+  border-color: #c2cf8b;
+  color: #6f812f;
 }
 
 .dashboard-btn-soft:hover {
-  background: #f3e8ff;
-  border-color: #c084fc;
-  color: #4c1d95;
+  background: #eef3dc;
+  border-color: #aebd70;
+  color: #5f7128;
 }
 

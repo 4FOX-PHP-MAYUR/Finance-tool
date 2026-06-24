@@ -38,6 +38,7 @@ exports.vendorUploadMiddleware = multer({
   fileFilter: registrationFileFilter,
 }).fields([
   { name: 'companyRegistrationDocs', maxCount: 30 },
+  { name: 'bankDetailsDocs', maxCount: 30 },
   { name: 'licenseUpload', maxCount: 1 },
   { name: 'taxLaterCertificate', maxCount: 1 },
 ]);
@@ -54,8 +55,8 @@ function textField(body, key) {
   return String(body[key]).trim();
 }
 
-function mapUploadedFiles(files) {
-  const list = files && files.companyRegistrationDocs ? files.companyRegistrationDocs : [];
+function mapUploadedFiles(files, fieldName = 'companyRegistrationDocs') {
+  const list = files && files[fieldName] ? files[fieldName] : [];
   return list.map((f) => ({
     path: `${PUBLIC_PREFIX}/${UPLOAD_SUBDIR}/${f.filename}`,
     originalName: f.originalname || f.filename,
@@ -72,8 +73,8 @@ function mapUploadedSingleFile(files, fieldName) {
   };
 }
 
-function parseRetainedDocs(body) {
-  const raw = body.companyRegistrationDocsRetain;
+function parseRetainedDocs(body, retainField = 'companyRegistrationDocsRetain') {
+  const raw = body[retainField];
   if (raw == null || raw === '') return null;
   try {
     const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw;
@@ -107,7 +108,8 @@ exports.createVendor = async (req, res) => {
     }
 
     const createdBy = req.user.id || req.user._id || req.user.userId;
-    const newDocs = mapUploadedFiles(req.files);
+    const newDocs = mapUploadedFiles(req.files, 'companyRegistrationDocs');
+    const newBankDocs = mapUploadedFiles(req.files, 'bankDetailsDocs');
     const licenseUpload = mapUploadedSingleFile(req.files, 'licenseUpload');
     const taxLaterCertificate = mapUploadedSingleFile(req.files, 'taxLaterCertificate');
 
@@ -123,6 +125,8 @@ exports.createVendor = async (req, res) => {
       regularContactPhone: textField(body, 'regularContactPhone') || '',
       regularContactAddress: textField(body, 'regularContactAddress') || '',
       vendorAddress: textField(body, 'vendorAddress') || '',
+      description: textField(body, 'description') || '',
+      currency: textField(body, 'currency') || '',
       country: textField(body, 'country') || '',
       taxRate: textField(body, 'taxRate') || '',
       licenseNo: textField(body, 'licenseNo') || '',
@@ -131,6 +135,7 @@ exports.createVendor = async (req, res) => {
       licenseUpload,
       taxLaterCertificate,
       companyRegistrationDocs: newDocs,
+      bankDetailsDocs: newBankDocs,
     };
     if (createdBy) payload.createdBy = createdBy;
 
@@ -196,6 +201,8 @@ exports.updateVendor = async (req, res) => {
       'regularContactPhone',
       'regularContactAddress',
       'vendorAddress',
+      'description',
+      'currency',
       'country',
       'taxRate',
       'licenseNo',
@@ -212,8 +219,10 @@ exports.updateVendor = async (req, res) => {
       vendor.licenseExpiryDate = parseDateField(body.licenseExpiryDate);
     }
 
-    const retainedPaths = parseRetainedDocs(body);
-    const newDocs = mapUploadedFiles(req.files);
+    const retainedPaths = parseRetainedDocs(body, 'companyRegistrationDocsRetain');
+    const retainedBankPaths = parseRetainedDocs(body, 'bankDetailsDocsRetain');
+    const newDocs = mapUploadedFiles(req.files, 'companyRegistrationDocs');
+    const newBankDocs = mapUploadedFiles(req.files, 'bankDetailsDocs');
     const newLicenseUpload = mapUploadedSingleFile(req.files, 'licenseUpload');
     const newTaxLaterCertificate = mapUploadedSingleFile(req.files, 'taxLaterCertificate');
 
@@ -224,6 +233,14 @@ exports.updateVendor = async (req, res) => {
           ? existing.filter((d) => retainedPaths.includes(d.path))
           : existing;
       vendor.companyRegistrationDocs = [...kept, ...newDocs];
+    }
+    if (retainedBankPaths !== null || newBankDocs.length > 0) {
+      const existing = vendor.bankDetailsDocs || [];
+      const kept =
+        retainedBankPaths !== null
+          ? existing.filter((d) => retainedBankPaths.includes(d.path))
+          : existing;
+      vendor.bankDetailsDocs = [...kept, ...newBankDocs];
     }
     if (body.licenseUploadRetain !== undefined && !parseBooleanField(body.licenseUploadRetain, false)) {
       vendor.licenseUpload = null;

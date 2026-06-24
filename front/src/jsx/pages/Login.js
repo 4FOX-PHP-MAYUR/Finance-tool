@@ -4,10 +4,8 @@ import { Link, useNavigate } from 'react-router-dom';
 import { loginAction } from '../../store/actions/AuthActions';
 // const cors = require("cors");
 //
-import logo from '../../images/logo.png'
-import logotext from '../../images/logo-text.png'
-import login from "../../images/bg-login2.png";
-import loginbg from "../../images/bg-login.jpg";
+import loginMainBg from '../../images/login-bg-blue-collage.png';
+import romeoLogo from '../../images/ask-romeo-logo.png';
 
 function Login (props) {
     const nav = useNavigate();
@@ -42,25 +40,17 @@ function Login (props) {
     }
 
   return (
-        <div className="login-main-page" style={{backgroundImage:"url("+ loginbg +")"}}>
+        <div className="login-main-page" style={{backgroundImage:"url("+ loginMainBg +")"}}>
             <div className="login-wrapper">
-                <div className="login-aside-left" style={{backgroundImage:"url("+ login +")"}}>
+                <div className="login-aside-left">
                     <Link to="/dashboard" className="login-logo">
-                        <img src={logo} alt="" className="me-2"/>
-                        <img src={logotext} alt="" className="ms-1"/>
-                      </Link>
+                        <img src={romeoLogo} alt="Ask Romeo logo" className="romeo-logo" />
+                    </Link>
                     <div className="login-description">
-                        <h2 className="text-black  mb-2">Check the Status</h2>
-                        <p className="fs-12 text-black">It is a long established fact that a reader will be distracted by the readable content of a page when looking at its layout. The point of using Lorem Ipsum is that it has a more-or-less normal distribution of letters,</p>
-                        <ul className="social-icons mt-4">
-                            <li><Link to={"#"}><i className="fab fa-facebook-f"></i></Link></li>
-                            <li><Link to={"#"}><i className="fab fa-twitter"></i></Link></li>
-                            <li><Link to={"#"}><i className="fab fa-linkedin-in"></i></Link></li>
-                        </ul>
-                        <div className="mt-5">
-                            <Link to={"#"} className="text-black me-4">Privacy Policy</Link>
-                            <Link to={"#"} className="text-black me-4">Contact</Link>
-                        </div>
+                        <p className="fs-14 text-black">
+                            Stay in control of your traffic operations with a clear, real-time view of everything that matters. Sign in to
+                            access your dashboard, monitor flow, and make smarter decisions instantly.
+                        </p>
                     </div>
                 </div>
                 <div className="login-aside-right">
@@ -130,7 +120,7 @@ function Login (props) {
                                         className="btn bg-white text-primary btn-block"
                                         disabled={props.showLoading}
                                       >
-                                        {props.showLoading ? "Signing In..." : "Sign In"}
+                                        {props.showLoading ? "Signing in..." : "Sign in"}
                                       </button>
                                     </div>
                                   </form>

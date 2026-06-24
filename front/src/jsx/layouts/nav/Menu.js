@@ -162,7 +162,7 @@ export const MenuList = [
             {
                 title: 'Admin approval',
                 to: 'assign-vendor-admin-approval',
-                moduleKey: 'assigned_vendors',
+                moduleKey: 'vendor_admin_approval',
             },
         ],
     },
@@ -205,6 +205,25 @@ export const MenuList = [
                 title: 'Manage',
                 to: 'department-list',
                 moduleKey: 'departments',
+            },
+        ],
+    },
+
+    // Resource allocation
+    {
+        title: 'Resource Allocation',
+        classsChange: 'mm-collapse',
+        iconStyle: <i className="flaticon-network"></i>,
+        content: [
+            {
+                title: 'Add',
+                to: 'resource-allocation-add',
+                moduleKey: 'resource_allocation',
+            },
+            {
+                title: 'Manage',
+                to: 'resource-allocation-list',
+                moduleKey: 'resource_allocation',
             },
         ],
     },

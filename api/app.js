@@ -35,6 +35,10 @@ const options = {
     servers :[
       {
         url : "http://localhost:3200"
+      },
+      {
+        url : "http://117.254.196.100:4195",
+        description: "Production server"
       }
     ],
     paths: {
@@ -80,10 +84,13 @@ database.once('connected', () => {
 app.use(express.json());
 app.use(bodyParser.json());
 
-app.use(cors ({
-    origin: 
-    "*"
-    }));
+// Reflect browser Origin (works for any host/port). Do not add a second cors() in startup/routes.js.
+app.use(
+  cors({
+    origin: true,
+    optionsSuccessStatus: 200,
+  })
+);
   
 
 //app.use('/api', routes)
@@ -100,7 +107,10 @@ if (app.get("env") === "development") {
   // Middleware to handle errors
   app.use(errorMiddleware);
 app.use((req, res, next) => {
-   res.setHeader('Content-Security-Policy', "default-src 'self'; frame-ancestors 'self' http://localhost:3000","http://localhost:6001");
+  res.setHeader(
+    'Content-Security-Policy',
+    "default-src 'self'; frame-ancestors 'self' http://localhost:4195 http://localhost:6001 http://117.254.196.100",
+  );
   res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
   next();
 });
@@ -110,6 +120,12 @@ app.use((req, res, next) => {
 
 
 require("./startup/routes")(app);
+
+/** Public deploy check — no auth (live PM2/nginx may lag router updates). */
+app.get("/api/invoice-pdf/version", (_req, res) => {
+  const { INVOICE_EXTRACTOR_VERSION } = require("./services/invoiceExtractor");
+  res.json({ extractorVersion: INVOICE_EXTRACTOR_VERSION, ok: true });
+});
 
 app.get('/hello',(req,res)=>{
     res.send("hi mongo");

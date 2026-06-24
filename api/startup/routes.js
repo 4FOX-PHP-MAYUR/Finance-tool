@@ -1,7 +1,6 @@
 // Project Management Module (moved inside function below)
 const express = require("express");
 var bodyParser = require("body-parser");
-const cors = require("cors");
 const authRoute = require("../routes/auth.routes");
 
 module.exports = function (app) {
@@ -10,24 +9,9 @@ module.exports = function (app) {
 
     // Department Management Module
     app.use("/api/departments", require("../routes/department.routes"));
-  var whitelist = [
-    "http://localhost:3000",
-    "http://localhost:3001",
-    "http://localhost:5004",
-    "http://localhost:6001",
-    "https://fiduciarily-unfelicitous-monty.ngrok-free.dev",
-    "https://fiduciarily-unfelicitous-monty.ngrok-free.dev/",
-  ];
-  var corsOptions = {
-    function(origin, callback) {
-      if (whitelist.indexOf(origin) !== -1) {
-        callback(null, true);
-      } else {
-        callback(new Error("Not allowed by CORS :"));
-      }
-    },
-    optionsSuccessStatus: 200, // some legacy browsers (IE11, various SmartTVs) choke on 204
-  };
+
+  // CORS is applied once in app.js (cors with open origin). Do not add a second cors()
+  // here — a whitelist duplicate was rejecting valid browser Origins (domain/IP mismatch).
 
   app.use(bodyParser.json({ limit: "50mb" }));
   app.use(
@@ -38,7 +22,6 @@ module.exports = function (app) {
     })
   );
 
-  app.use(cors(corsOptions));
   app.use("/public", express.static("public"));
 
   /// One Development Admin Routes ///////////////////////////////////////////////////////////////////////

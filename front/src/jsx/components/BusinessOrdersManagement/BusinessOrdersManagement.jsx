@@ -11,6 +11,7 @@ import {
   downloadInvoicePdf,
 } from "../../../services/invoicePdfApi";
 import { fetchDepartments } from "../../../services/departmentApi";
+import { fetchVendors } from "../../../services/vendorApi";
 import CreatableSelect from "react-select/creatable";
 import { fetchProjects } from "../../../services/projectApi";
 import ScopeDetailsRichText from "./ScopeDetailsRichText";
@@ -62,6 +63,38 @@ function scopeItemMoneyStr(v) {
   return String(v);
 }
 
+function isLicenseExpired(value) {
+  if (!value) return false;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return false;
+  d.setHours(23, 59, 59, 999);
+  return d.getTime() < Date.now();
+}
+
+function findVendorById(vendors, vendorId) {
+  const id = String(vendorId ?? "").trim();
+  if (!id) return null;
+  return (Array.isArray(vendors) ? vendors : []).find((v) => String(v._id) === id) || null;
+}
+
+function isScopeVendorExpired(vendors, vendorId) {
+  const vendor = findVendorById(vendors, vendorId);
+  if (!vendor) return false;
+  return isLicenseExpired(vendor.licenseExpiryDate);
+}
+
+function getExpiredVendorIndices(scopeOfWork, vendors) {
+  if (!Array.isArray(scopeOfWork)) return [];
+  const expired = [];
+  scopeOfWork.forEach((item, index) => {
+    const vendorId = String(item?.vendorId ?? "").trim();
+    if (vendorId && isScopeVendorExpired(vendors, vendorId)) {
+      expired.push(index + 1);
+    }
+  });
+  return expired;
+}
+
 function normalizeScopeItemForDraft(item) {
   const taxRaw =
     item?.taxAmount != null && item?.taxAmount !== ""
@@ -75,6 +108,7 @@ function normalizeScopeItemForDraft(item) {
     title: item?.title ?? "",
     details: Array.isArray(item?.details) ? [...item.details] : [],
     departmentId: item?.departmentId != null ? String(item.departmentId) : "",
+    vendorId: item?.vendorId != null ? String(item.vendorId) : "",
     taxAmount: scopeItemMoneyStr(taxRaw),
     totalAmount: scopeItemMoneyStr(lineTotalRaw),
   };
@@ -120,15 +154,26 @@ function buildDraftFromResult(r) {
     subtotal: money("subtotal", "subtotal"),
     standardRateAmount: money("standardRateAmount", "standardRateAmount"),
     totalAmount: money("totalAmount", "totalAmount"),
+    termsAndConditions: empty(r.termsAndConditions),
     scopeOfWork: scope,
   };
 }
 
 function formatListAmount(value) {
   if (value == null || value === "") return "—";
-  const num = Number(value);
+  const num = parseListAmountNumber(value);
   if (!Number.isFinite(num)) return "—";
-  return num.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  return num.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+}
+
+function parseListAmountNumber(value) {
+  if (value == null || value === "") return NaN;
+  const cleaned = String(value)
+    .trim()
+    .replace(/[,\s]/g, "")
+    .replace(/[₹$€£]/g, "")
+    .replace(/[^\d.-]/g, "");
+  return Number(cleaned);
 }
 
 function formatListDate(iso) {
@@ -190,6 +235,7 @@ const BusinessOrdersManagement = () => {
   const [saveError, setSaveError] = useState("");
   const [approveLoading, setApproveLoading] = useState(false);
   const [scopeDepartmentErrorIndices, setScopeDepartmentErrorIndices] = useState([]);
+  const [scopeExpiredVendorErrorIndices, setScopeExpiredVendorErrorIndices] = useState([]);
   const inputRef = useRef(null);
 
   const [listItems, setListItems] = useState([]);
@@ -213,6 +259,9 @@ const BusinessOrdersManagement = () => {
   const [departments, setDepartments] = useState([]);
   const [departmentsLoading, setDepartmentsLoading] = useState(false);
   const [departmentsLoadError, setDepartmentsLoadError] = useState("");
+  const [vendors, setVendors] = useState([]);
+  const [vendorsLoading, setVendorsLoading] = useState(false);
+  const [vendorsLoadError, setVendorsLoadError] = useState("");
   /** Single combobox: linked project `{ projectId, projectName }` or typed-only `{ projectId: null, projectName }`. */
   const [uploadProject, setUploadProject] = useState(null);
 
@@ -322,6 +371,28 @@ const BusinessOrdersManagement = () => {
     };
   }, []);
 
+  useEffect(() => {
+    let cancelled = false;
+    setVendorsLoading(true);
+    setVendorsLoadError("");
+    fetchVendors()
+      .then((list) => {
+        if (!cancelled) setVendors(Array.isArray(list) ? list : []);
+      })
+      .catch((e) => {
+        if (!cancelled) {
+          setVendorsLoadError(e.message || "Could not load vendors.");
+          setVendors([]);
+        }
+      })
+      .finally(() => {
+        if (!cancelled) setVendorsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   const filteredSortedInvoices = useMemo(() => {
     let rows = [...listItems];
     const q = invoiceSearch.trim().toLowerCase();
@@ -353,8 +424,8 @@ const BusinessOrdersManagement = () => {
     }
     rows.sort((a, b) => {
       if (invoiceSort.key === "totalAmount") {
-        const av = a.totalAmount != null && a.totalAmount !== "" ? Number(a.totalAmount) : NaN;
-        const bv = b.totalAmount != null && b.totalAmount !== "" ? Number(b.totalAmount) : NaN;
+        const av = parseListAmountNumber(a.totalAmount);
+        const bv = parseListAmountNumber(b.totalAmount);
         const aNum = Number.isFinite(av) ? av : -Infinity;
         const bNum = Number.isFinite(bv) ? bv : -Infinity;
         return invoiceSort.direction === "asc" ? aNum - bNum : bNum - aNum;
@@ -515,10 +586,20 @@ const BusinessOrdersManagement = () => {
     [draft?.scopeOfWork]
   );
 
+  const expiredVendorIndices = useMemo(
+    () => getExpiredVendorIndices(draft?.scopeOfWork, vendors),
+    [draft?.scopeOfWork, vendors],
+  );
+
   useEffect(() => {
     if (!scopeDepartmentErrorIndices.length) return;
     setScopeDepartmentErrorIndices(missingDepartmentIndices);
   }, [missingDepartmentIndices, scopeDepartmentErrorIndices.length]);
+
+  useEffect(() => {
+    if (!scopeExpiredVendorErrorIndices.length) return;
+    setScopeExpiredVendorErrorIndices(expiredVendorIndices);
+  }, [expiredVendorIndices, scopeExpiredVendorErrorIndices.length]);
 
   const setFileIfPdf = (file) => {
     if (!file) {
@@ -594,7 +675,16 @@ const BusinessOrdersManagement = () => {
       );
       return;
     }
+    const expiredVendors = getExpiredVendorIndices(draft.scopeOfWork, vendors);
+    if (expiredVendors.length) {
+      setScopeExpiredVendorErrorIndices(expiredVendors);
+      setSaveError(
+        `Deliverable ${expiredVendors.join(", ")} has an expired vendor license. Please choose another vendor.`
+      );
+      return;
+    }
     setScopeDepartmentErrorIndices([]);
+    setScopeExpiredVendorErrorIndices([]);
     setSaveLoading(true);
     setSaveError("");
     try {
@@ -611,6 +701,7 @@ const BusinessOrdersManagement = () => {
         subtotal: draft.subtotal,
         standardRateAmount: draft.standardRateAmount,
         totalAmount: draft.totalAmount,
+        termsAndConditions: draft.termsAndConditions,
         scopeOfWork: draft.scopeOfWork,
       };
       if (draft.projectSelectId) {
@@ -627,7 +718,7 @@ const BusinessOrdersManagement = () => {
     } finally {
       setSaveLoading(false);
     }
-  }, [result, draft, loadInvoiceList]);
+  }, [result, draft, loadInvoiceList, vendors]);
 
   const handleApprove = useCallback(async () => {
     if (!result?.savedId || result.approved) return;
@@ -639,7 +730,16 @@ const BusinessOrdersManagement = () => {
       );
       return;
     }
+    const expiredVendors = getExpiredVendorIndices(draft?.scopeOfWork, vendors);
+    if (expiredVendors.length) {
+      setScopeExpiredVendorErrorIndices(expiredVendors);
+      setSaveError(
+        `Deliverable ${expiredVendors.join(", ")} has an expired vendor license. Please choose another vendor.`
+      );
+      return;
+    }
     setScopeDepartmentErrorIndices([]);
+    setScopeExpiredVendorErrorIndices([]);
     setApproveLoading(true);
     setSaveError("");
     try {
@@ -651,7 +751,7 @@ const BusinessOrdersManagement = () => {
     } finally {
       setApproveLoading(false);
     }
-  }, [result?.savedId, result?.approved, draft?.scopeOfWork, loadInvoiceList]);
+  }, [result?.savedId, result?.approved, draft?.scopeOfWork, loadInvoiceList, vendors]);
 
   const openInvoiceView = async (row) => {
     setViewRow(row);
@@ -1129,7 +1229,7 @@ const BusinessOrdersManagement = () => {
                           onChange={(e) => updateScopeTitle(index, e.target.value)}
                         />
                         <div className="row g-2 mb-2">
-                          <div className="col-12">
+                          <div className="col-md-6">
                             <label
                               className="form-label small text-muted mb-0"
                               htmlFor={`bom-sow-department-${index}`}
@@ -1168,6 +1268,69 @@ const BusinessOrdersManagement = () => {
                               </p>
                             ) : null}
                           </div>
+                          <div className="col-md-6">
+                            <label
+                              className="form-label small text-muted mb-0"
+                              htmlFor={`bom-sow-vendor-${index}`}
+                            >
+                              Vendor
+                            </label>
+                            <select
+                              id={`bom-sow-vendor-${index}`}
+                              className="bom-input form-select form-select-sm"
+                              value={item.vendorId ?? ""}
+                              onChange={(e) =>
+                                updateScopeMoneyField(index, "vendorId", e.target.value)
+                              }
+                              disabled={vendorsLoading}
+                            >
+                              <option value="">
+                                {vendorsLoading
+                                  ? "Loading vendors..."
+                                  : vendorsLoadError
+                                    ? "Unable to load vendors"
+                                    : "Select vendor"}
+                              </option>
+                              {(() => {
+                                const selectedId = String(item.vendorId ?? "").trim();
+                                const selectedVendor = findVendorById(vendors, selectedId);
+                                const showSavedExpired =
+                                  selectedId &&
+                                  selectedVendor &&
+                                  isLicenseExpired(selectedVendor.licenseExpiryDate);
+                                return (
+                                  <>
+                                    {showSavedExpired ? (
+                                      <option value={selectedId}>
+                                        {selectedVendor.vendorName} (license expired)
+                                      </option>
+                                    ) : null}
+                                    {vendors.map((vendor) => (
+                                      <option
+                                        key={String(vendor._id)}
+                                        value={String(vendor._id)}
+                                        disabled={isLicenseExpired(vendor.licenseExpiryDate)}
+                                      >
+                                        {vendor.vendorName}
+                                        {isLicenseExpired(vendor.licenseExpiryDate)
+                                          ? " (license expired)"
+                                          : ""}
+                                      </option>
+                                    ))}
+                                  </>
+                                );
+                              })()}
+                            </select>
+                            {vendorsLoadError ? (
+                              <p className="small text-warning mb-0 mt-1">{vendorsLoadError}</p>
+                            ) : null}
+                            {isScopeVendorExpired(vendors, item.vendorId) ||
+                            scopeExpiredVendorErrorIndices.includes(index + 1) ? (
+                              <p className="small text-danger mb-0 mt-1">
+                                This vendor&apos;s license is expired. Please select another vendor.
+                              </p>
+                            ) : null}
+                          </div>
                           <div className="col-6">
                             <label className="form-label small text-muted mb-0" htmlFor={`bom-sow-tax-${index}`}>
                               Tax amount (5%)
@@ -1196,8 +1359,8 @@ const BusinessOrdersManagement = () => {
                           </div>
                         </div>
                         <ScopeDetailsRichText
+                          key={`scope-details-${index}-${baseline}`}
                           details={item.details || []}
-                          resetKey={baseline}
                           editorId={`bom-sow-${index}`}
                           onDetailsChange={(lines) => updateScopeDetailsLines(index, lines)}
                         />
@@ -1219,18 +1382,40 @@ const BusinessOrdersManagement = () => {
               </div>
             </section>
 
+            <section className="bom-panel bom-panel-side mt-4">
+              <h2 className="bom-side-title">Terms &amp; Conditions</h2>
+              <p className="bom-side-subtitle">
+                Extracted from the PDF footer when present. Edit before saving if needed.
+              </p>
+              {draft ? (
+                <textarea
+                  className="bom-input form-control form-control-sm"
+                  rows={5}
+                  value={draft.termsAndConditions}
+                  onChange={(e) => updateDraft({ termsAndConditions: e.target.value })}
+                  placeholder="Payment terms and other conditions from the service order"
+                />
+              ) : (
+                <p className="bom-history-empty mb-0">
+                  Upload and extract an invoice PDF to view terms here.
+                </p>
+              )}
+            </section>
+
             {result?.savedId ? (
               <div className="d-flex flex-wrap justify-content-end gap-2 mt-3">
                 {!result.approved ? (
                   <button
                     type="button"
                     className="bom-btn bom-btn-success"
-                      disabled={approveLoading || isDirty || missingDepartmentIndices.length > 0}
+                      disabled={approveLoading || isDirty || missingDepartmentIndices.length > 0 || expiredVendorIndices.length > 0}
                     title={
                       isDirty
                         ? "Save your edits before approving"
                           : missingDepartmentIndices.length > 0
                             ? "Select Department for all deliverables before approving"
+                          : expiredVendorIndices.length > 0
+                            ? "Replace expired vendors before approving"
                         : "Mark this PDF upload as approved"
                     }
                     onClick={handleApprove}
@@ -1284,8 +1469,8 @@ const BusinessOrdersManagement = () => {
                     ) : null}
 
                     {!listLoading && !listError ? (
-                      <div className="row mb-3 align-items-center">
-                        <div className="col-md-5 col-lg-4">
+                      <div className="row mb-3 align-items-center bom-invoice-filters-row">
+                        <div className="col-md-5 col-lg-4 bom-filter-search">
                           <div className="input-group">
                             <span className="input-group-text bg-white">
                               <i className="fa fa-search text-muted" />
@@ -1310,7 +1495,7 @@ const BusinessOrdersManagement = () => {
                             ) : null}
                           </div>
                         </div>
-                        <div className="col-md-3 col-lg-2 mt-2 mt-md-0">
+                        <div className="col-md-3 col-lg-2 mt-2 mt-md-0 bom-filter-from">
                           <label className="form-label small text-muted mb-1">Start date</label>
                           <input
                             type="date"
@@ -1321,7 +1506,7 @@ const BusinessOrdersManagement = () => {
                             title="From date"
                           />
                         </div>
-                        <div className="col-md-3 col-lg-2 mt-2 mt-md-0">
+                        <div className="col-md-3 col-lg-2 mt-2 mt-md-0 bom-filter-to">
                           <label className="form-label small text-muted mb-1">End date</label>
                           <input
                             type="date"
@@ -1332,7 +1517,7 @@ const BusinessOrdersManagement = () => {
                             title="To date"
                           />
                         </div>
-                        <div className="col-md-2 col-lg-1 mt-2 mt-md-0">
+                        <div className="col-md-2 col-lg-1 mt-2 mt-md-0 bom-filter-clear">
                           <label className="form-label small text-muted mb-1 d-block"> </label>
                           {invoiceOrderDateFrom || invoiceOrderDateTo ? (
                             <button
@@ -1347,7 +1532,7 @@ const BusinessOrdersManagement = () => {
                             </button>
                           ) : null}
                         </div>
-                        <div className="col-md-12 col-lg-5 text-md-end mt-2 mt-md-0">
+                        <div className="col-md-12 col-lg-5 text-md-end mt-2 mt-md-0 bom-filter-meta">
                           <small className="text-muted">
                             {filteredSortedInvoices.length === 0
                               ? "No results"
@@ -1451,10 +1636,10 @@ const BusinessOrdersManagement = () => {
                               ) : (
                                 invoicePaginated.map((row, idx) => (
                                   <tr key={row.id}>
-                                    <td className="text-muted small">
+                                    <td className="text-muted small" data-label="#">
                                       {(invoicePage - 1) * INVOICE_LIST_PAGE_SIZE + idx + 1}
                                     </td>
-                                    <td>
+                                    <td data-label="Client name">
                                       <span className="fw-semibold">
                                         {row.clientName?.trim() ? row.clientName : "—"}
                                       </span>
@@ -1464,31 +1649,31 @@ const BusinessOrdersManagement = () => {
                                         </div>
                                       ) : null}
                                     </td>
-                                    <td className="small text-break">
+                                    <td className="small text-break" data-label="Project">
                                       {row.projectName?.trim() ? row.projectName : "—"}
                                     </td>
-                                    <td className="text-center">
+                                    <td className="text-center" data-label="Status">
                                       {row.approved ? (
                                         <span className="badge bg-success">Approved</span>
                                       ) : (
                                         <span className="badge bg-secondary">Pending</span>
                                       )}
                                     </td>
-                                    <td className="small text-break bom-invoice-cell-invoice-no">
+                                    <td className="small text-break bom-invoice-cell-invoice-no" data-label="SO No">
                                       {row.invoiceNumber?.trim() ? row.invoiceNumber : "—"}
                                     </td>
-                                    <td className="small text-nowrap">
+                                    <td className="small text-nowrap" data-label="Order date">
                                       {row.purchaseOrderDate?.trim() ? row.purchaseOrderDate : "—"}
                                     </td>
-                                    <td className="bom-invoice-sow-cell">
+                                    <td className="bom-invoice-sow-cell" data-label="SOW (main)">
                                       <span className="text-truncate d-inline-block" style={{ maxWidth: 280 }} title={row.sowHeading || ""}>
                                         {row.sowHeading?.trim() ? row.sowHeading : "—"}
                                       </span>
                                     </td>
-                                    <td className="text-end text-nowrap fw-semibold">
+                                    <td className="text-end text-nowrap fw-semibold" data-label="Total amt">
                                       {formatListAmount(row.totalAmount)}
                                     </td>
-                                    <td className="text-center">
+                                    <td className="text-center" data-label="PDF">
                                       <div className="d-flex flex-column align-items-center gap-1">
                                         <button
                                           type="button"
@@ -1506,7 +1691,7 @@ const BusinessOrdersManagement = () => {
                                         </button>
                                       </div>
                                     </td>
-                                    <td className="text-center bom-invoice-icon-actions">
+                                    <td className="text-center bom-invoice-icon-actions" data-label="Actions">
                                       <div className="bom-invoice-action-btns" role="group" aria-label="Invoice actions">
                                         <button
                                           type="button"
@@ -1660,9 +1845,17 @@ const BusinessOrdersManagement = () => {
                     block.totalAmount != null && block.totalAmount !== ""
                       ? block.totalAmount
                       : block.amount;
+                  const vendorLabel =
+                    block.vendorId != null && String(block.vendorId).trim()
+                      ? vendors.find((v) => String(v._id) === String(block.vendorId))?.vendorName ||
+                        block.vendorId
+                      : "";
                   return (
                   <li key={i} className="mb-2">
                     <span className="fw-semibold">{block.title || "(No title)"}</span>
+                    {vendorLabel ? (
+                      <div className="small text-muted mt-1">Vendor: {vendorLabel}</div>
+                    ) : null}
                     {(blockTax != null && blockTax !== "") ||
                     (blockLineTotal != null && blockLineTotal !== "") ? (
                       <div className="small text-muted mt-1">
@@ -1685,6 +1878,16 @@ const BusinessOrdersManagement = () => {
                   );
                 })}
               </ul>
+              {viewDetail.termsAndConditions?.trim() ? (
+                <>
+                  <p className="mb-1 mt-3">
+                    <strong>Terms &amp; conditions</strong>
+                  </p>
+                  <p className="small mb-0" style={{ whiteSpace: "pre-wrap" }}>
+                    {viewDetail.termsAndConditions}
+                  </p>
+                </>
+              ) : null}
               <p className="text-muted small mb-0">Saved {formatListDate(viewRow?.createdAt)}</p>
             </div>
           ) : null}

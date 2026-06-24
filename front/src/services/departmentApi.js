@@ -1,6 +1,6 @@
 /**
  * Department Management API
- * Real API integration for http://localhost:3000/api/departments
+ * Real API integration for http://localhost:4195/api/departments
  */
 
 import axios from "axios";

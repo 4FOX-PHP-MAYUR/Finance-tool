@@ -57,13 +57,18 @@ function parseCostString(v) {
 
 function formatNumberDisplay(value) {
   if (!Number.isFinite(value)) return "—";
-  return new Intl.NumberFormat("en-GB", {
-    minimumFractionDigits: 0,
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
 }
 
+function formatCostDisplay(value) {
+  return formatNumberDisplay(parseCostString(value));
+}
+
 const VAT_OPTIONS = ["5", "10", "15", "20", "25"];
+const EMPTY_STATE_ROWS = [];
 
 const AssignVendorBulkEdit = ({ fixedVariant = null }) => {
   const navigate = useNavigate();
@@ -74,7 +79,11 @@ const AssignVendorBulkEdit = ({ fixedVariant = null }) => {
   const [rows, setRows] = useState([]);
   const [hodUsers, setHodUsers] = useState([]);
 
-  const stateRows = Array.isArray(location.state?.rows) ? location.state.rows : [];
+  const stateRows = useMemo(
+    () =>
+      Array.isArray(location.state?.rows) ? location.state.rows : EMPTY_STATE_ROWS,
+    [location.state?.rows],
+  );
   const boIdFromState = normalizeId(location.state?.businessOrderId);
   const boIdFromQuery = normalizeId(searchParams.get("boId"));
   const businessOrderId = boIdFromState || boIdFromQuery;
@@ -265,8 +274,8 @@ const AssignVendorBulkEdit = ({ fixedVariant = null }) => {
         hasClient = true;
       }
     });
-    const fmt = new Intl.NumberFormat("en-GB", {
-      minimumFractionDigits: 0,
+    const fmt = new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
     return {
@@ -483,7 +492,7 @@ const AssignVendorBulkEdit = ({ fixedVariant = null }) => {
                             </label>
                             {lockAssignmentFields ? (
                               <div className="border rounded px-3 py-2 small bg-light">
-                                {String(r.costToAgency || "").trim() || "—"}
+                                {formatCostDisplay(r.costToAgency)}
                               </div>
                             ) : (
                               <input
@@ -503,7 +512,7 @@ const AssignVendorBulkEdit = ({ fixedVariant = null }) => {
                             </label>
                             {lockAssignmentFields ? (
                               <div className="border rounded px-3 py-2 small bg-light">
-                                {String(r.costToClient || "").trim() || "—"}
+                                {formatCostDisplay(r.costToClient)}
                               </div>
                             ) : (
                               <input

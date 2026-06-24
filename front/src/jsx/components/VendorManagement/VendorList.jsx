@@ -133,6 +133,8 @@ const VendorList = () => {
         regularContactPhone: values.regularContactPhone || "",
         regularContactAddress: values.regularContactAddress || "",
         vendorAddress: values.vendorAddress || "",
+        description: values.description || "",
+        currency: values.currency || "",
         country: values.country || "",
         taxRate: values.taxRate || "",
         licenseNo: values.licenseNo || "",
@@ -144,6 +146,8 @@ const VendorList = () => {
         taxLaterCertificateRetain: Boolean(values.taxLaterCertificateRetain),
         companyRegistrationDocs: values.companyRegistrationDocs || [],
         companyRegistrationDocsRetain: values.companyRegistrationDocsRetain || [],
+        bankDetailsDocs: values.bankDetailsDocs || [],
+        bankDetailsDocsRetain: values.bankDetailsDocsRetain || [],
       });
 
       toast.success(`"${values.vendorName}" updated.`, {
@@ -308,7 +312,9 @@ const VendorList = () => {
                           </tr>
                         ) : (
                           paginated.map((v, idx) => {
-                            const docCount = (v.companyRegistrationDocs || []).length;
+                            const docCount =
+                              (v.companyRegistrationDocs || []).length +
+                              (v.bankDetailsDocs || []).length;
                             return (
                               <tr key={v._id}>
                                 <td className="text-muted">
@@ -335,12 +341,11 @@ const VendorList = () => {
                                   >
                                     <i className="fas fa-pencil-alt" />
                                   </button>
-                                  <a
+                                  <button
+                                    type="button"
                                     className="btn btn-info shadow btn-xs sharp me-1"
                                     title="View all docs"
-                                    href="#"
-                                    onClick={(e) => {
-                                      e.preventDefault();
+                                    onClick={() => {
                                       if (docCount) openDocs(v);
                                     }}
                                     style={{
@@ -349,7 +354,7 @@ const VendorList = () => {
                                     }}
                                   >
                                     <i className="fa fa-eye" />
-                                  </a>
+                                  </button>
                                   <button
                                     type="button"
                                     className="btn btn-danger shadow btn-xs sharp"
@@ -424,6 +429,8 @@ const VendorList = () => {
                 regularContactPhone: editingVendor.regularContactPhone || "",
                 regularContactAddress: editingVendor.regularContactAddress || "",
                 vendorAddress: editingVendor.vendorAddress || "",
+                description: editingVendor.description || "",
+                currency: editingVendor.currency || "",
                 country: editingVendor.country || "",
                 taxRate: editingVendor.taxRate || "",
                 licenseNo: editingVendor.licenseNo || "",
@@ -432,6 +439,7 @@ const VendorList = () => {
                 licenseUpload: editingVendor.licenseUpload || null,
                 taxLaterCertificate: editingVendor.taxLaterCertificate || null,
                 companyRegistrationDocs: editingVendor.companyRegistrationDocs || [],
+                bankDetailsDocs: editingVendor.bankDetailsDocs || [],
                 _id: editingVendor._id,
               }}
               onSubmit={handleEditSubmit}
@@ -451,46 +459,102 @@ const VendorList = () => {
           </Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          {(docsVendor?.companyRegistrationDocs || []).length === 0 ? (
+          {(docsVendor?.companyRegistrationDocs || []).length === 0 &&
+          (docsVendor?.bankDetailsDocs || []).length === 0 ? (
             <p className="text-muted mb-0">No documents found.</p>
           ) : (
-            <ul className="list-group">
-              {(docsVendor?.companyRegistrationDocs || []).map((doc, idx) => (
-                <li
-                  key={doc.path || `${doc.originalName || "doc"}-${idx}`}
-                  className="list-group-item d-flex align-items-center justify-content-between gap-2"
-                >
-                  <span className="text-truncate me-2" title={doc.originalName || doc.path}>
-                    {doc.originalName || doc.path || `Document ${idx + 1}`}
-                  </span>
-                  <div className="d-flex align-items-center gap-1">
-                    <a
-                      href={getVendorDocUrl(doc.path) || "#"}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="btn btn-sm btn-outline-primary"
-                      title="Preview file"
-                      onClick={(e) => {
-                        if (!getVendorDocUrl(doc.path)) e.preventDefault();
-                      }}
-                    >
-                      <i className="fa fa-eye" aria-hidden />
-                    </a>
-                    <a
-                      href={getVendorDocUrl(doc.path) || "#"}
-                      download={doc.originalName || "document"}
-                      className="btn btn-sm btn-outline-secondary"
-                      title="Download file"
-                      onClick={(e) => {
-                        if (!getVendorDocUrl(doc.path)) e.preventDefault();
-                      }}
-                    >
-                      <i className="fa fa-download" aria-hidden />
-                    </a>
-                  </div>
-                </li>
-              ))}
-            </ul>
+            <>
+              {(docsVendor?.companyRegistrationDocs || []).length > 0 ? (
+                <>
+                  <h6 className="text-primary mb-2">
+                    <i className="fa fa-file-text me-2" />
+                    Company registration
+                  </h6>
+                  <ul className="list-group mb-3">
+                    {(docsVendor?.companyRegistrationDocs || []).map((doc, idx) => (
+                      <li
+                        key={doc.path || `${doc.originalName || "doc"}-${idx}`}
+                        className="list-group-item d-flex align-items-center justify-content-between gap-2"
+                      >
+                        <span className="text-truncate me-2" title={doc.originalName || doc.path}>
+                          {doc.originalName || doc.path || `Document ${idx + 1}`}
+                        </span>
+                        <div className="d-flex align-items-center gap-1">
+                          <a
+                            href={getVendorDocUrl(doc.path) || "#"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-sm btn-outline-primary"
+                            title="Preview file"
+                            onClick={(e) => {
+                              if (!getVendorDocUrl(doc.path)) e.preventDefault();
+                            }}
+                          >
+                            <i className="fa fa-eye" aria-hidden />
+                          </a>
+                          <a
+                            href={getVendorDocUrl(doc.path) || "#"}
+                            download={doc.originalName || "document"}
+                            className="btn btn-sm btn-outline-secondary"
+                            title="Download file"
+                            onClick={(e) => {
+                              if (!getVendorDocUrl(doc.path)) e.preventDefault();
+                            }}
+                          >
+                            <i className="fa fa-download" aria-hidden />
+                          </a>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+              {(docsVendor?.bankDetailsDocs || []).length > 0 ? (
+                <>
+                  <h6 className="text-primary mb-2">
+                    <i className="fa fa-university me-2" />
+                    Bank details
+                  </h6>
+                  <ul className="list-group">
+                    {(docsVendor?.bankDetailsDocs || []).map((doc, idx) => (
+                      <li
+                        key={doc.path || `${doc.originalName || "bank"}-${idx}`}
+                        className="list-group-item d-flex align-items-center justify-content-between gap-2"
+                      >
+                        <span className="text-truncate me-2" title={doc.originalName || doc.path}>
+                          {doc.originalName || doc.path || `Document ${idx + 1}`}
+                        </span>
+                        <div className="d-flex align-items-center gap-1">
+                          <a
+                            href={getVendorDocUrl(doc.path) || "#"}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="btn btn-sm btn-outline-primary"
+                            title="Preview file"
+                            onClick={(e) => {
+                              if (!getVendorDocUrl(doc.path)) e.preventDefault();
+                            }}
+                          >
+                            <i className="fa fa-eye" aria-hidden />
+                          </a>
+                          <a
+                            href={getVendorDocUrl(doc.path) || "#"}
+                            download={doc.originalName || "document"}
+                            className="btn btn-sm btn-outline-secondary"
+                            title="Download file"
+                            onClick={(e) => {
+                              if (!getVendorDocUrl(doc.path)) e.preventDefault();
+                            }}
+                          >
+                            <i className="fa fa-download" aria-hidden />
+                          </a>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : null}
+            </>
           )}
         </Modal.Body>
       </Modal>

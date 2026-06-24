@@ -1,7 +1,8 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import Swal from "sweetalert2";
 import {
   fetchBusinessOrdersForProject,
+  fetchBusinessOrderForAssign,
   fileUrl,
 } from "../../../services/assignVendorApi";
 
@@ -107,8 +108,8 @@ function parseCostString(v) {
 
 function formatNumberDisplay(value) {
   if (!Number.isFinite(value)) return "—";
-  return new Intl.NumberFormat("en-GB", {
-    minimumFractionDigits: 0,
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
 }
@@ -152,6 +153,58 @@ function isLicenseExpired(value) {
   if (Number.isNaN(d.getTime())) return false;
   d.setHours(23, 59, 59, 999);
   return d.getTime() < Date.now();
+}
+
+function buildSowFromScopeItem(item) {
+  const parts = [];
+  const title = String(item?.title ?? "").trim();
+  if (title) parts.push(title);
+  if (Array.isArray(item?.details)) {
+    item.details.forEach((line) => {
+      const s = String(line ?? "").trim();
+      if (s) parts.push(s);
+    });
+  }
+  return parts.join("\n");
+}
+
+function vendorVatFromOptions(vendorOptions, vendorId) {
+  const selected = (Array.isArray(vendorOptions) ? vendorOptions : []).find(
+    (v) => normalizeId(v._id) === normalizeId(vendorId),
+  );
+  const vendorRate = normalizeVatRate(selected?.taxRate);
+  return {
+    vatNeeded: Boolean(vendorRate),
+    vatPercent: vendorRate || "",
+  };
+}
+
+function createVendorDraftSnapshot({
+  clientId,
+  projectId,
+  businessOrderId,
+  vendorId,
+  sow,
+  vendorOptions,
+}) {
+  const vat = vendorVatFromOptions(vendorOptions, vendorId);
+  return {
+    clientId,
+    projectId,
+    businessOrderId,
+    vendorId,
+    costToAgency: "",
+    costToClient: "",
+    invoiceSubmissionDate: "",
+    vatNeeded: vat.vatNeeded,
+    vatPercent: vat.vatPercent,
+    vatAmount: "",
+    sow,
+    hodAssignUserId: "",
+    sendToHodReview: "",
+    vendorInvoiceFiles: [],
+    vendorReportFiles: [],
+  };
 }
 
 const AssignVendorForm = ({
@@ -214,7 +267,10 @@ const AssignVendorForm = ({
 
   // "Add more" (batch create) support — only used in create mode.
   const [drafts, setDrafts] = useState([]);
-  const contextLocked = !isEdit && drafts.length > 0;
+  const [editingDraftIndex, setEditingDraftIndex] = useState(null);
+  const editingDraftRef = useRef(null);
+  const contextLocked = !isEdit && (drafts.length > 0 || editingDraftIndex !== null);
+  const soPrefillBoRef = useRef("");
 
   useEffect(() => {
     if (isFixedHierarchy) {
@@ -236,6 +292,8 @@ const AssignVendorForm = ({
       setVatPercent("");
       setVatAmount("");
       setDrafts([]);
+      setEditingDraftIndex(null);
+      editingDraftRef.current = null;
       return;
     }
     if (!isFixedHierarchy) {
@@ -336,6 +394,88 @@ const AssignVendorForm = ({
       ),
     [vendors],
   );
+
+  useEffect(() => {
+    if (isEdit) return;
+    const bid = normalizeId(businessOrderId);
+    if (!bid) {
+      soPrefillBoRef.current = "";
+      setDrafts([]);
+      setEditingDraftIndex(null);
+      editingDraftRef.current = null;
+      return;
+    }
+    if (soPrefillBoRef.current === bid) return;
+
+    let cancelled = false;
+    fetchBusinessOrderForAssign(bid)
+      .then((bo) => {
+        if (cancelled || !bo) return;
+        soPrefillBoRef.current = bid;
+
+        const scope = Array.isArray(bo.scopeOfWork) ? bo.scopeOfWork : [];
+        const withVendor = scope.filter((item) => {
+          const vid = normalizeId(item?.vendorId);
+          if (!vid) return false;
+          const vendor = vendorOptions.find((v) => normalizeId(v._id) === vid);
+          return vendor && !isLicenseExpired(vendor.licenseExpiryDate);
+        });
+
+        setEditingDraftIndex(null);
+        editingDraftRef.current = null;
+        setVendorId("");
+        setCostToAgency("");
+        setCostToClient("");
+        setInvoiceSubmissionDate("");
+        setVatNeeded(false);
+        setVatPercent("");
+        setVatAmount("");
+        setSow("");
+        setHodAssignUserId("");
+        setSendToHodReview("");
+        setVendorInvoiceFiles([]);
+        setVendorReportFiles([]);
+
+        if (!withVendor.length) {
+          setDrafts([]);
+          return;
+        }
+
+        const cid = normalizeId(clientId);
+        const pid = normalizeId(projectId);
+        setDrafts(
+          withVendor.map((item) =>
+            createVendorDraftSnapshot({
+              clientId: cid,
+              projectId: pid,
+              businessOrderId: bid,
+              vendorId: normalizeId(item.vendorId),
+              sow: buildSowFromScopeItem(item),
+              vendorOptions,
+            }),
+          ),
+        );
+      })
+      .catch(() => {
+        if (!cancelled) {
+          soPrefillBoRef.current = "";
+          setDrafts([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [businessOrderId, isEdit, clientId, projectId, vendorOptions]);
+
+  useEffect(() => {
+    if (isEdit || !soPrefillBoRef.current || !normalizeId(vendorId)) return;
+    const vat = vendorVatFromOptions(vendorOptions, vendorId);
+    if (vat.vatPercent && !vatPercent) {
+      setVatNeeded(true);
+      setVatPercent(vat.vatPercent);
+    }
+  }, [vendorOptions, vendorId, vatPercent, isEdit]);
 
   const vendorHasMatch = useMemo(
     () =>
@@ -491,6 +631,25 @@ const AssignVendorForm = ({
       }
     }
 
+    if (!isEdit && hasAnyDrafts) {
+      if (!cid || !pid || !bid) {
+        Swal.fire({
+          icon: "warning",
+          title: "Incomplete",
+          text: "Select client, project, and sales order (SO) before submitting.",
+        });
+        return;
+      }
+      if (editingDraftIndex !== null) {
+        Swal.fire({
+          icon: "warning",
+          title: "Finish editing",
+          text: "Update or cancel the assignment you are editing before submitting.",
+        });
+        return;
+      }
+    }
+
     if (isEdit && reviewMode === "hod") {
       if (!String(hodReviewReason || "").trim()) {
         Swal.fire({
@@ -572,7 +731,21 @@ const AssignVendorForm = ({
 
     // Create mode: if drafts exist, submit as a batch. Optionally include the current row if it's complete.
     const currentComplete = cid && pid && bid && vid;
-    const batch = currentComplete ? [...drafts, payload] : [...drafts];
+    let batch = currentComplete ? [...drafts, payload] : [...drafts];
+    if (editingDraftIndex !== null && currentComplete) {
+      batch = [...drafts];
+      batch.splice(editingDraftIndex, 0, payload);
+    }
+    editingDraftRef.current = null;
+    setEditingDraftIndex(null);
+    if (!batch.length) {
+      Swal.fire({
+        icon: "warning",
+        title: "Nothing to submit",
+        text: "Add at least one vendor assignment to the batch.",
+      });
+      return;
+    }
     onSubmit(batch.length > 1 ? batch : batch[0] || payload);
   };
 
@@ -634,12 +807,108 @@ const AssignVendorForm = ({
       sow,
       hodAssignUserId: normalizeId(hodAssignUserId),
       sendToHodReview,
-      vendorInvoiceFiles,
-      vendorReportFiles,
+      vendorInvoiceFiles: [...vendorInvoiceFiles],
+      vendorReportFiles: [...vendorReportFiles],
     };
-    setDrafts((prev) => [...prev, snapshot]);
 
-    // Reset only the per-vendor fields so you can add another vendor for same SO quickly.
+    if (editingDraftIndex !== null) {
+      setDrafts((prev) => {
+        const next = [...prev];
+        next.splice(editingDraftIndex, 0, snapshot);
+        return next;
+      });
+      editingDraftRef.current = null;
+      setEditingDraftIndex(null);
+    } else {
+      setDrafts((prev) => [...prev, snapshot]);
+    }
+
+    setVendorId("");
+    setCostToAgency("");
+    setCostToClient("");
+    setInvoiceSubmissionDate("");
+    setVatNeeded(false);
+    setVatPercent("");
+    setVatAmount("");
+    setSow("");
+    setHodAssignUserId("");
+    setSendToHodReview("");
+    setVendorInvoiceFiles([]);
+    setVendorReportFiles([]);
+  };
+
+  const handleEditDraft = (idx) => {
+    if (isEdit || fieldsLocked) return;
+    const draft = drafts[idx];
+    if (!draft) return;
+
+    if (editingDraftIndex !== null) {
+      Swal.fire({
+        icon: "warning",
+        title: "Finish current edit",
+        text: "Update or cancel the assignment you are editing first.",
+      });
+      return;
+    }
+
+    if (normalizeId(vendorId)) {
+      Swal.fire({
+        icon: "warning",
+        title: "Clear form first",
+        text: "Add or clear the current assignment before editing another batch item.",
+      });
+      return;
+    }
+
+    editingDraftRef.current = {
+      ...draft,
+      vendorInvoiceFiles: Array.isArray(draft.vendorInvoiceFiles)
+        ? [...draft.vendorInvoiceFiles]
+        : [],
+      vendorReportFiles: Array.isArray(draft.vendorReportFiles)
+        ? [...draft.vendorReportFiles]
+        : [],
+    };
+
+    setVendorId(normalizeId(draft.vendorId));
+    setCostToAgency(draft.costToAgency ?? "");
+    setCostToClient(draft.costToClient ?? "");
+    setInvoiceSubmissionDate(draft.invoiceSubmissionDate ?? "");
+    setVatNeeded(Boolean(draft.vatNeeded));
+    setVatPercent(draft.vatPercent ?? "");
+    setVatAmount(draft.vatAmount ?? "");
+    setSow(draft.sow ?? "");
+    setHodAssignUserId(normalizeId(draft.hodAssignUserId));
+    setSendToHodReview(
+      draft.sendToHodReview === "yes"
+        ? "yes"
+        : draft.sendToHodReview === "no"
+          ? "no"
+          : "",
+    );
+    setVendorInvoiceFiles(
+      Array.isArray(draft.vendorInvoiceFiles) ? [...draft.vendorInvoiceFiles] : [],
+    );
+    setVendorReportFiles(
+      Array.isArray(draft.vendorReportFiles) ? [...draft.vendorReportFiles] : [],
+    );
+
+    setDrafts((prev) => prev.filter((_, i) => i !== idx));
+    setEditingDraftIndex(idx);
+  };
+
+  const handleCancelEditDraft = () => {
+    if (editingDraftIndex === null || !editingDraftRef.current) return;
+
+    const restored = editingDraftRef.current;
+    setDrafts((prev) => {
+      const next = [...prev];
+      next.splice(editingDraftIndex, 0, restored);
+      return next;
+    });
+
+    editingDraftRef.current = null;
+    setEditingDraftIndex(null);
     setVendorId("");
     setCostToAgency("");
     setCostToClient("");
@@ -729,7 +998,10 @@ const AssignVendorForm = ({
                 className="form-control"
                 value={businessOrderId}
                 disabled={fieldsLocked || contextLocked || !projectId || boLoading}
-                onChange={(e) => setBusinessOrderId(e.target.value)}
+                onChange={(e) => {
+                  soPrefillBoRef.current = "";
+                  setBusinessOrderId(e.target.value);
+                }}
               >
                 <option value="">
                   {boLoading
@@ -774,13 +1046,10 @@ const AssignVendorForm = ({
             onChange={(e) => {
               const nextVendorId = e.target.value;
               setVendorId(nextVendorId);
-              const selected = vendorOptions.find(
-                (v) => normalizeId(v._id) === normalizeId(nextVendorId),
-              );
-              const vendorRate = normalizeVatRate(selected?.taxRate);
-              if (vendorRate) {
+              const vat = vendorVatFromOptions(vendorOptions, nextVendorId);
+              if (vat.vatPercent) {
                 setVatNeeded(true);
-                setVatPercent(vendorRate);
+                setVatPercent(vat.vatPercent);
               }
             }}
           >
@@ -1222,16 +1491,35 @@ const AssignVendorForm = ({
                 disabled={isSubmitting || !canAddMore}
                 title={
                   canAddMore
-                    ? "Add this vendor assignment to the batch"
+                    ? editingDraftIndex !== null
+                      ? "Save changes to this batch assignment"
+                      : "Add this vendor assignment to the batch"
                     : "Select Client, Project, SO and Vendor first"
                 }
               >
-                <i className="fa fa-plus me-1" />
-                Add more
+                <i className={`fa ${editingDraftIndex !== null ? "fa-check" : "fa-plus"} me-1`} />
+                {editingDraftIndex !== null ? "Update assignment" : "Add more"}
               </button>
+              {editingDraftIndex !== null ? (
+                <button
+                  type="button"
+                  className="btn btn-outline-secondary btn-sm"
+                  onClick={handleCancelEditDraft}
+                  disabled={isSubmitting}
+                >
+                  Cancel edit
+                </button>
+              ) : null}
               {drafts.length > 0 ? (
                 <span className="small text-muted">
-                  Added {drafts.length} assignment{drafts.length === 1 ? "" : "s"} to submit.
+                  {editingDraftIndex !== null
+                    ? `Editing assignment #${editingDraftIndex + 1} — update details above, then click Update assignment.`
+                    : `${drafts.length} assignment${drafts.length === 1 ? "" : "s"} in batch — click Edit on each row to add costs and other details.`}
+                </span>
+              ) : null}
+              {editingDraftIndex !== null ? (
+                <span className="small text-primary">
+                  Editing batch assignment #{editingDraftIndex + 1}
                 </span>
               ) : null}
               {contextLocked ? (
@@ -1300,16 +1588,26 @@ const AssignVendorForm = ({
                             {invCount} inv / {repCount} rep
                           </td>
                           <td>
-                            <button
-                              type="button"
-                              className="btn btn-link btn-sm text-danger p-0"
-                              disabled={isSubmitting}
-                              onClick={() =>
-                                setDrafts((prev) => prev.filter((_, i) => i !== idx))
-                              }
-                            >
-                              Remove
-                            </button>
+                            <div className="d-flex flex-wrap gap-2">
+                              <button
+                                type="button"
+                                className="btn btn-link btn-sm text-primary p-0"
+                                disabled={isSubmitting || editingDraftIndex !== null}
+                                onClick={() => handleEditDraft(idx)}
+                              >
+                                Edit
+                              </button>
+                              <button
+                                type="button"
+                                className="btn btn-link btn-sm text-danger p-0"
+                                disabled={isSubmitting || editingDraftIndex !== null}
+                                onClick={() =>
+                                  setDrafts((prev) => prev.filter((_, i) => i !== idx))
+                                }
+                              >
+                                Remove
+                              </button>
+                            </div>
                           </td>
                         </tr>
                       );

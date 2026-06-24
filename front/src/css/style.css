@@ -73,19 +73,19 @@
 @import "./../vendor/perfect-scrollbar/css/perfect-scrollbar.css";
 @import "./../vendor/metismenu/css/metisMenu.min.css";
 :root {
-  --primary: #d8313d;
+  --primary: #3e5beb;
   --secondary: #392540;
-  --primary-hover: rgb(179.9346938776, 34.0653061224, 44.5469387755);
-  --primary-dark: rgb(94.1714285714, 17.8285714286, 23.3142857143);
-  --rgba-primary-1: rgba(216, 49, 61, 0.1);
-  --rgba-primary-2: rgba(216, 49, 61, 0.2);
-  --rgba-primary-3: rgba(216, 49, 61, 0.3);
-  --rgba-primary-4: rgba(216, 49, 61, 0.4);
-  --rgba-primary-5: rgba(216, 49, 61, 0.5);
-  --rgba-primary-6: rgba(216, 49, 61, 0.6);
-  --rgba-primary-7: rgba(216, 49, 61, 0.7);
-  --rgba-primary-8: rgba(216, 49, 61, 0.8);
-  --rgba-primary-9: rgba(216, 49, 61, 0.9);
+  --primary-hover: rgb(52, 77, 202);
+  --primary-dark: rgb(41, 60, 155);
+  --rgba-primary-1: rgba(62, 91, 235, 0.1);
+  --rgba-primary-2: rgba(62, 91, 235, 0.2);
+  --rgba-primary-3: rgba(62, 91, 235, 0.3);
+  --rgba-primary-4: rgba(62, 91, 235, 0.4);
+  --rgba-primary-5: rgba(62, 91, 235, 0.5);
+  --rgba-primary-6: rgba(62, 91, 235, 0.6);
+  --rgba-primary-7: rgba(62, 91, 235, 0.7);
+  --rgba-primary-8: rgba(62, 91, 235, 0.8);
+  --rgba-primary-9: rgba(62, 91, 235, 0.9);
 }
 
 .gradient_one {
@@ -275,7 +275,7 @@ Fixing Order => Base + Typography >> General Layout + Grid >> Page Layout + Comp
   --bs-gray-700: #495057;
   --bs-gray-800: #343a40;
   --bs-gray-900: #212529;
-  --bs-primary: #d8313d;
+  --bs-primary: #3e5beb;
   --bs-secondary: #392540;
   --bs-success: #2bc155;
   --bs-info: #2f4cdd;
@@ -283,7 +283,7 @@ Fixing Order => Base + Typography >> General Layout + Grid >> Page Layout + Comp
   --bs-danger: #f35757;
   --bs-light: #d3d1d1;
   --bs-dark: #3e4954;
-  --bs-primary-rgb: 216, 49, 61;
+  --bs-primary-rgb: 62, 91, 235;
   --bs-secondary-rgb: 57, 37, 64;
   --bs-success-rgb: 43, 193, 85;
   --bs-info-rgb: 47, 76, 221;
@@ -12138,6 +12138,14 @@ svg.pulse-svg .third-circle {
 .header-right .header-profile .dropdown-item {
   padding: 8px 24px;
 }
+.header-right .header-romeo-logo .header-romeo-logo-img {
+  width: 96px;
+  height: 34px;
+  display: block;
+  object-fit: cover;
+  object-position: center;
+  mix-blend-mode: multiply;
+}
 
 .dz-fullscreen #icon-minimize {
   display: none;
@@ -14882,11 +14890,86 @@ html[dir=rtl] [direction=rtl][data-sidebar-style=compact]:not([data-layout=horiz
 .deznav .deznav-scroll {
   position: relative;
   height: 100%;
+  padding-bottom: 64px;
+  display: flex;
+  flex-direction: column;
 }
 .deznav ul {
   padding: 0;
   margin: 0;
   list-style: none;
+}
+.sidebar-profile-fixed {
+  position: relative;
+  margin-top: auto;
+  padding: 10px 12px;
+  background: var(--primary);
+  z-index: 2;
+  flex-shrink: 0;
+}
+
+.sidebar-profile-link {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: #fff;
+  text-decoration: none;
+  border: 0;
+  background: transparent;
+  width: 100%;
+  text-align: left;
+  padding: 0;
+}
+
+.sidebar-profile-avatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 999px;
+  object-fit: cover;
+  border: 2px solid rgba(255, 255, 255, 0.25);
+}
+
+.sidebar-profile-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.1;
+}
+.sidebar-profile-menu {
+  position: absolute;
+  left: 14px;
+  right: 14px;
+  bottom: calc(100% + 12px);
+  background: #ececec;
+  border-radius: 22px;
+  padding: 22px 20px;
+  box-shadow: 0 14px 24px rgba(0, 0, 0, 0.18);
+}
+
+.sidebar-profile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  color: #7a7a7a;
+  text-decoration: none;
+  background: transparent;
+  border: 0;
+  width: 100%;
+  padding: 10px 2px;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.2;
+  cursor: pointer;
+}
+.sidebar-profile-menu-item i {
+  color: #3e5beb;
+  font-size: 24px;
+}
+.sidebar-profile-menu-item:not(:last-child) {
+  margin-bottom: 10px;
 }
 .deznav .metismenu {
   display: flex;
@@ -15308,7 +15391,7 @@ html[dir=rtl] [direction=rtl][data-sidebar-style=compact]:not([data-layout=horiz
 
 /*$primary  : #7356f1 !default;*/
 :root {
-  --primary: #d8313d;
+  --primary: #3e5beb;
   --secondary: #392540;
   --primary-hover: rgb(179.9346938776, 34.0653061224, 44.5469387755);
   --primary-dark: rgb(94.1714285714, 17.8285714286, 23.3142857143);
@@ -15546,7 +15629,7 @@ Fixing Order => Base + Typography >> General Layout + Grid >> Page Layout + Comp
 */
 /*$primary  : #7356f1 !default;*/
 :root {
-  --primary: #d8313d;
+  --primary: #3e5beb;
   --secondary: #392540;
   --primary-hover: rgb(179.9346938776, 34.0653061224, 44.5469387755);
   --primary-dark: rgb(94.1714285714, 17.8285714286, 23.3142857143);
@@ -15787,7 +15870,7 @@ Fixing Order => Base + Typography >> General Layout + Grid >> Page Layout + Comp
 }
 /*$primary  : #7356f1 !default;*/
 :root {
-  --primary: #d8313d;
+  --primary: #3e5beb;
   --secondary: #392540;
   --primary-hover: rgb(179.9346938776, 34.0653061224, 44.5469387755);
   --primary-dark: rgb(94.1714285714, 17.8285714286, 23.3142857143);
@@ -26374,7 +26457,7 @@ Fixing Order => Base + Typography >> General Layout + Grid >> Page Layout + Comp
 
 /*$primary  : #7356f1 !default;*/
 :root {
-  --primary: #d8313d;
+  --primary: #3e5beb;
   --secondary: #392540;
   --primary-hover: rgb(179.9346938776, 34.0653061224, 44.5469387755);
   --primary-dark: rgb(94.1714285714, 17.8285714286, 23.3142857143);
@@ -26538,7 +26621,7 @@ Fixing Order => Base + Typography >> General Layout + Grid >> Page Layout + Comp
 
 /*$primary  : #7356f1 !default;*/
 :root {
-  --primary: #d8313d;
+  --primary: #3e5beb;
   --secondary: #392540;
   --primary-hover: rgb(179.9346938776, 34.0653061224, 44.5469387755);
   --primary-dark: rgb(94.1714285714, 17.8285714286, 23.3142857143);
@@ -28754,7 +28837,7 @@ svg text {
 
 /*$primary  : #7356f1 !default;*/
 :root {
-  --primary: #d8313d;
+  --primary: #3e5beb;
   --secondary: #392540;
   --primary-hover: rgb(179.9346938776, 34.0653061224, 44.5469387755);
   --primary-dark: rgb(94.1714285714, 17.8285714286, 23.3142857143);
@@ -29382,7 +29465,7 @@ svg text {
 
 /*$primary  : #7356f1 !default;*/
 :root {
-  --primary: #d8313d;
+  --primary: #3e5beb;
   --secondary: #392540;
   --primary-hover: rgb(179.9346938776, 34.0653061224, 44.5469387755);
   --primary-dark: rgb(94.1714285714, 17.8285714286, 23.3142857143);
@@ -29708,7 +29791,7 @@ Fixing Order => Base + Typography >> General Layout + Grid >> Page Layout + Comp
 
 /*$primary  : #7356f1 !default;*/
 :root {
-  --primary: #d8313d;
+  --primary: #3e5beb;
   --secondary: #392540;
   --primary-hover: rgb(179.9346938776, 34.0653061224, 44.5469387755);
   --primary-dark: rgb(94.1714285714, 17.8285714286, 23.3142857143);
@@ -29759,7 +29842,7 @@ Fixing Order => Base + Typography >> General Layout + Grid >> Page Layout + Comp
 
 /*$primary  : #7356f1 !default;*/
 :root {
-  --primary: #d8313d;
+  --primary: #3e5beb;
   --secondary: #392540;
   --primary-hover: rgb(179.9346938776, 34.0653061224, 44.5469387755);
   --primary-dark: rgb(94.1714285714, 17.8285714286, 23.3142857143);
@@ -29821,7 +29904,7 @@ Fixing Order => Base + Typography >> General Layout + Grid >> Page Layout + Comp
 
 /*$primary  : #7356f1 !default;*/
 :root {
-  --primary: #d8313d;
+  --primary: #3e5beb;
   --secondary: #392540;
   --primary-hover: rgb(179.9346938776, 34.0653061224, 44.5469387755);
   --primary-dark: rgb(94.1714285714, 17.8285714286, 23.3142857143);
@@ -35568,30 +35651,25 @@ table.dataTable thead .sorting {
 }
 
 .login-main-page {
-  padding: 100px;
+  padding: 40px;
   background-size: cover;
   background-position: center;
+  background-repeat: no-repeat;
   position: relative;
   z-index: 1;
 }
 .login-main-page .login-wrapper {
-  background: var(--primary);
-  max-width: 1170px;
+  background: #3e5beb;
+  max-width: 1120px;
   margin-left: auto;
   margin-right: auto;
+  overflow: hidden;
 }
 .login-main-page .text-black {
   color: #222 !important;
 }
 .login-main-page:after {
-  content: "";
-  position: absolute;
-  height: 100%;
-  width: 100%;
-  left: 0;
-  top: 0;
-  background: rgba(0, 0, 0, 0.3);
-  z-index: -1;
+  content: none;
 }
 @media only screen and (max-width: 991px) {
   .login-main-page {
@@ -35606,40 +35684,35 @@ table.dataTable thead .sorting {
 
 .login-wrapper {
   display: flex;
-  min-height: 600px;
-  height: calc(100vh - 200px);
+  min-height: 640px;
+  height: calc(100vh - 90px);
   box-shadow: 0 0 60px 10px rgba(85, 44, 44, 0.2);
 }
 .login-wrapper .login-aside-left {
   max-width: 50%;
   flex: 0 0 50%;
   position: relative;
-  display: table;
-  padding: 50px;
+  display: flex;
+  flex-direction: column;
+  padding: 36px 34px;
   z-index: 1;
-  background-size: cover;
-  background-repeat: no-repeat;
-  background-position: bottom;
-  background-color: #fff;
+  background-color: #e3e3e3;
 }
 .login-wrapper .login-aside-left:after {
-  position: absolute;
-  top: 0;
-  left: 0;
-  height: 100%;
-  width: 100%;
-  z-index: -1;
-  content: "";
-  /* Permalink - use to edit and share this gradient: https://colorzilla.com/gradient-editor/#ffffff+0,ffffff+100&0+0,1+100 */
-  background: -moz-linear-gradient(top, rgba(255, 255, 255, 0) 0%, rgb(255, 255, 255) 100%); /* FF3.6-15 */
-  background: -webkit-linear-gradient(top, rgba(255, 255, 255, 0) 0%, rgb(255, 255, 255) 100%); /* Chrome10-25,Safari5.1-6 */
-  background: linear-gradient(to bottom, rgba(255, 255, 255, 0) 0%, rgb(255, 255, 255) 100%); /* W3C, IE10+, FF16+, Chrome26+, Opera12+, Safari7+ */
-  filter: progid:DXImageTransform.Microsoft.gradient( startColorstr='#00ffffff', endColorstr='#ffffff',GradientType=0 ); /* IE6-9 */
+  content: none;
 }
 .login-wrapper .login-aside-left .login-description {
-  display: table-cell;
-  vertical-align: bottom;
-  padding-bottom: 40px;
+  margin-top: 22px;
+  max-width: 460px;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+}
+.login-wrapper .login-aside-left .login-description p {
+  font-size: 24px;
+  line-height: 1.35;
+  font-weight: 700;
+  margin-bottom: 0;
 }
 .login-wrapper .login-aside-right {
   max-width: 50%;
@@ -35670,7 +35743,43 @@ table.dataTable thead .sorting {
   color: #000;
 }
 .login-wrapper .login-logo {
-  position: absolute;
+  display: inline-block;
+  width: 420px;
+  max-width: 100%;
+}
+.login-wrapper .romeo-logo {
+  display: block;
+  width: 100%;
+  max-width: 420px;
+  height: auto;
+  mix-blend-mode: multiply;
+}
+.login-wrapper .powered-by-block {
+  margin-top: auto;
+  padding-top: 28px;
+}
+.login-wrapper .powered-by-block h6 {
+  font-size: 16px;
+  font-weight: 700;
+}
+.login-wrapper .powered-by-logo {
+  width: 190px;
+  max-width: 100%;
+  height: auto;
+}
+.login-wrapper .btn.text-primary {
+  color: #8c9e43 !important;
+}
+.login-wrapper .form-check-input {
+  border-color: #8c9e43;
+}
+.login-wrapper .form-check-input:checked {
+  background-color: #8c9e43;
+  border-color: #8c9e43;
+}
+.login-wrapper .form-control:focus {
+  border-color: #8c9e43;
+  box-shadow: 0 0 0 0.2rem rgba(140, 158, 67, 0.25);
 }
 .login-wrapper .authincation-content {
   background-color: transparent;
@@ -35717,6 +35826,9 @@ table.dataTable thead .sorting {
     width: 100%;
     display: block;
   }
+  .login-wrapper .powered-by-block {
+    margin-top: 36px;
+  }
   .login-wrapper .authincation-content {
     padding: 30px 10px;
   }
@@ -35727,6 +35839,9 @@ table.dataTable thead .sorting {
   }
   .login-wrapper .login-aside-left .login-description {
     padding-bottom: 0;
+  }
+  .login-wrapper .login-aside-left .login-description p {
+    font-size: 18px;
   }
   .login-wrapper h2,
   .login-wrapper .h2 {
@@ -39663,7 +39778,7 @@ html[dir=rtl] [direction=rtl][data-sidebar-style=compact]:not([data-layout=horiz
 
 /*$primary  : #7356f1 !default;*/
 :root {
-  --primary: #d8313d;
+  --primary: #3e5beb;
   --secondary: #392540;
   --primary-hover: rgb(179.9346938776, 34.0653061224, 44.5469387755);
   --primary-dark: rgb(94.1714285714, 17.8285714286, 23.3142857143);
@@ -40004,6 +40119,38 @@ html[dir=rtl] [direction=rtl][data-sidebar-style=compact]:not([data-layout=horiz
 }
 [data-theme-version=dark] .footer .copyright p {
   color: #fff;
+}
+
+/* Runtime theme override: replace legacy red with requested blue */
+:root {
+  --primary: #3e5beb;
+  --primary-hover: #344dca;
+  --primary-dark: #293c9b;
+  --rgba-primary-1: rgba(62, 91, 235, 0.1);
+  --rgba-primary-2: rgba(62, 91, 235, 0.2);
+  --rgba-primary-3: rgba(62, 91, 235, 0.3);
+  --rgba-primary-4: rgba(62, 91, 235, 0.4);
+  --rgba-primary-5: rgba(62, 91, 235, 0.5);
+  --rgba-primary-6: rgba(62, 91, 235, 0.6);
+  --rgba-primary-7: rgba(62, 91, 235, 0.7);
+  --rgba-primary-8: rgba(62, 91, 235, 0.8);
+  --rgba-primary-9: rgba(62, 91, 235, 0.9);
+  --bs-primary: #3e5beb;
+  --bs-primary-rgb: 62, 91, 235;
+}
+
+.nav-header,
+.deznav,
+.sidebar-profile-fixed,
+.menu-toggle .nav-header,
+[data-sidebar-style=full][data-layout=vertical] .menu-toggle .deznav {
+  background: #3e5beb !important;
+  background-color: #3e5beb !important;
+}
+
+.hamburger .line,
+.menu-toggle .nav-header .nav-control .hamburger .line {
+  background: #3e5beb !important;
 }
 
 /*# sourceMappingURL=style.css.map */

@@ -50,6 +50,7 @@ export const LEGACY_COARSE_PARENT = {
   assigned_vendors: "vendors",
   vendor_hod_review: "vendors",
   vendor_finance_review: "vendors",
+  vendor_admin_approval: "vendors",
   projects_add: "projects",
   projects_list: "projects",
 };
@@ -76,7 +77,7 @@ export function sortPermissionGrid(grid) {
   });
 }
 
-function isModuleKeyAllowed(allowedSet, moduleKey) {
+export function isModuleKeyAllowed(allowedSet, moduleKey) {
   const k = String(moduleKey || "")
     .toLowerCase()
     .trim();
@@ -84,6 +85,15 @@ function isModuleKeyAllowed(allowedSet, moduleKey) {
   if (allowedSet.has(k)) return true;
   const legacy = LEGACY_COARSE_PARENT[k];
   return legacy ? allowedSet.has(legacy) : false;
+}
+
+/** Whether the user may open a route/menu item (view), including legacy coarse parents. */
+export function canViewModule(assigned, permissions, moduleKey) {
+  if (!moduleKey) return true;
+  if (!assigned) return true;
+  const allowed = allowedModuleKeysFromPermissions(assigned, permissions);
+  if (allowed == null) return true;
+  return isModuleKeyAllowed(allowed, moduleKey);
 }
 
 /** GET /api/admin/modules — list module master rows (seeds defaults when empty). */

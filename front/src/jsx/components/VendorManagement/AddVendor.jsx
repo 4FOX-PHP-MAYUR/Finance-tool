@@ -21,6 +21,8 @@ const AddVendor = () => {
         regularContactPhone: values.regularContactPhone || "",
         regularContactAddress: values.regularContactAddress || "",
         vendorAddress: values.vendorAddress || "",
+        description: values.description || "",
+        currency: values.currency || "",
         country: values.country || "",
         taxRate: values.taxRate || "",
         licenseNo: values.licenseNo || "",
@@ -29,6 +31,7 @@ const AddVendor = () => {
         licenseUpload: values.licenseUpload || null,
         taxLaterCertificate: values.taxLaterCertificate || null,
         companyRegistrationDocs: values.companyRegistrationDocs || [],
+        bankDetailsDocs: values.bankDetailsDocs || [],
       });
 
       Swal.fire({

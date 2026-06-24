@@ -450,7 +450,9 @@
 #bom-pdf-root .bom-invoice-table-wrap {
   border: 1px solid #e9ecef;
   border-radius: 10px;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
   background: #fff;
 }
 
@@ -511,7 +513,7 @@
 }
 
 #bom-pdf-root .bom-invoice-th-actions {
-  min-width: 148px;
+  min-width: 176px;
   width: 1%;
 }
 
@@ -599,5 +601,136 @@
   #bom-pdf-root .bom-result-row {
     grid-template-columns: 1fr;
     row-gap: 8px;
+  }
+}
+
+@media (max-width: 1199.98px) {
+  #bom-pdf-root .bom-invoice-card .card-body {
+    padding: 1rem;
+  }
+
+  #bom-pdf-root .bom-invoice-filters-row {
+    row-gap: 0.75rem;
+  }
+
+  #bom-pdf-root .bom-filter-meta {
+    text-align: left !important;
+  }
+}
+
+@media (max-width: 767.98px) {
+  #bom-pdf-root .bom-panel-side {
+    padding: 16px;
+  }
+
+  #bom-pdf-root .bom-topbar-title {
+    font-size: 24px;
+  }
+
+  #bom-pdf-root .bom-title {
+    font-size: 22px;
+  }
+
+  #bom-pdf-root .bom-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  #bom-pdf-root .bom-actions {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+
+  #bom-pdf-root .bom-invoice-card-header {
+    align-items: flex-start !important;
+  }
+
+  #bom-pdf-root .bom-invoice-table-wrap {
+    border: 0;
+    border-radius: 0;
+    background: transparent;
+    overflow: visible;
+  }
+
+  #bom-pdf-root .bom-invoice-table {
+    min-width: 0;
+    border-collapse: separate;
+    border-spacing: 0;
+    background: transparent;
+  }
+
+  #bom-pdf-root .bom-invoice-table thead {
+    display: none;
+  }
+
+  #bom-pdf-root .bom-invoice-table tbody {
+    display: grid;
+    gap: 12px;
+  }
+
+  #bom-pdf-root .bom-invoice-table tbody tr {
+    display: block;
+    border: 1px solid #e9ecef;
+    border-radius: 12px;
+    background: #fff;
+    box-shadow: 0 4px 14px rgba(15, 23, 42, 0.05);
+    overflow: hidden;
+  }
+
+  #bom-pdf-root .bom-invoice-table.table-striped > tbody > tr:nth-of-type(odd) > * {
+    --bs-table-accent-bg: transparent;
+  }
+
+  #bom-pdf-root .bom-invoice-table tbody td {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    width: 100%;
+    text-align: right !important;
+    border: 0;
+    border-bottom: 1px solid #f1f5f9;
+    padding: 0.6rem 0.8rem;
+    white-space: normal !important;
+  }
+
+  #bom-pdf-root .bom-invoice-table tbody td:last-child {
+    border-bottom: 0;
+  }
+
+  #bom-pdf-root .bom-invoice-table tbody td::before {
+    content: attr(data-label);
+    color: #64748b;
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    text-align: left;
+    flex: 0 0 42%;
+    max-width: 42%;
+  }
+
+  #bom-pdf-root .bom-invoice-table tbody td[colspan] {
+    display: block;
+    text-align: center !important;
+    border-bottom: 0;
+  }
+
+  #bom-pdf-root .bom-invoice-table tbody td[colspan]::before {
+    content: none;
+  }
+
+  #bom-pdf-root .bom-invoice-action-btns {
+    margin-left: auto;
+  }
+
+  #bom-pdf-root .bom-invoice-pdf-btn {
+    margin-left: auto;
+  }
+
+  #bom-pdf-root .pagination {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+    gap: 4px;
   }
 }

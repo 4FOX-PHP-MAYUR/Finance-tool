@@ -1,8 +1,12 @@
 import React, { useReducer,  useEffect, useState } from "react";
 import PerfectScrollbar from "react-perfect-scrollbar";
 import {Collapse} from 'react-bootstrap';
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import {useScrollPosition} from "@n8tb1t/use-scroll-position";
+import { useDispatch, useSelector } from "react-redux";
+import profile from "../../../images/profile/12.png";
+import { resolveUploadedAssetUrl } from "../../../config/api";
+import { Logout } from "../../../store/actions/AuthActions";
 import { MenuList } from "./Menu";
 import {
   fetchMyPermissions,
@@ -25,6 +29,16 @@ const SideBar = () => {
   const [state, setState] = useReducer(reducer, initialState);
   const [menu, setMenu] = useState(MenuList);
   const [loadingMenu, setLoadingMenu] = useState(true);
+  const [isProfileMenuOpen, setIsProfileMenuOpen] = useState(false);
+  const auth = useSelector((state) => state?.auth?.auth || {});
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const displayName = auth?.userName || auth?.name || auth?.fullName || "User";
+  const avatarSrc = resolveUploadedAssetUrl(auth?.imageUrl) || profile;
+    const onLogout = () => {
+      dispatch(Logout(navigate));
+    };
+
 
     const [hideOnScroll, setHideOnScroll] = useState(true)
     useScrollPosition(
@@ -182,6 +196,32 @@ const SideBar = () => {
           
         
             
+            <div className="sidebar-profile-fixed">
+              {isProfileMenuOpen && (
+                <div className="sidebar-profile-menu">
+                  <Link
+                    to="/my-profile"
+                    className="sidebar-profile-menu-item"
+                    onClick={() => setIsProfileMenuOpen(false)}
+                  >
+                    <i className="las la-user"></i>
+                    <span>Profile</span>
+                  </Link>
+                  <button type="button" className="sidebar-profile-menu-item" onClick={onLogout}>
+                    <i className="las la-sign-out-alt"></i>
+                    <span>Logout</span>
+                  </button>
+                </div>
+              )}
+              <button
+                type="button"
+                className="sidebar-profile-link sidebar-profile-trigger"
+                onClick={() => setIsProfileMenuOpen((prev) => !prev)}
+              >
+                <img src={avatarSrc} alt={displayName} className="sidebar-profile-avatar" />
+                <span className="sidebar-profile-name">{displayName}</span>
+              </button>
+            </div>
           </PerfectScrollbar>
       </div>
     );

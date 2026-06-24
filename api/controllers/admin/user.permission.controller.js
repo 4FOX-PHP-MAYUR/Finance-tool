@@ -6,19 +6,6 @@ const RolePermissionModel = db.rolePermission;
 const ModuleModel = db.module;
 const { loadRolePermissionsForAuth } = require("../../services/rolePermissionBootstrap.service");
 
-const normalizeModuleName = (moduleName) =>
-  String(moduleName || "").trim().toLowerCase();
-
-function restrictPermissionsForRole(roleName, permissions) {
-  const rn = String(roleName || "").trim().toLowerCase();
-  if (rn !== "hod") return permissions || [];
-
-  const allowed = new Set(["dashboard", "vendor_hod_review"]);
-  return (permissions || []).filter((p) =>
-    allowed.has(normalizeModuleName(p?.moduleName))
-  );
-}
-
 function normalizeRoleObjectId(roleId) {
   if (roleId == null || roleId === "") return null;
   const s = String(roleId).trim();
@@ -78,7 +65,6 @@ exports.getMyPermissions = async (req, res) => {
         );
     }
 
-    const role = await RoleModel.findById(oid).select("roleName");
     const doc = await loadRolePermissionsForAuth(String(oid));
 
     return res.status(200).json(
@@ -87,10 +73,7 @@ exports.getMyPermissions = async (req, res) => {
         c_results("Permissions fetched successfully", {
           roleId: String(oid),
           assigned: Boolean(doc?.permissions?.length),
-          permissions: restrictPermissionsForRole(
-            role?.roleName,
-            doc?.permissions || []
-          ),
+          permissions: doc?.permissions || [],
         }),
         res.statusCode
       )

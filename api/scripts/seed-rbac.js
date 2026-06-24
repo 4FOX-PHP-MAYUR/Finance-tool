@@ -22,6 +22,7 @@ const MODULE_DEFAULTS = [
   { moduleName: "assigned_vendors", description: "Vendor — assigned vendors", parentModule: "vendors" },
   { moduleName: "vendor_hod_review", description: "Vendor — HOD review", parentModule: "vendors" },
   { moduleName: "vendor_finance_review", description: "Vendor — finance review", parentModule: "vendors" },
+  { moduleName: "vendor_admin_approval", description: "Vendor — admin approval", parentModule: "vendors" },
   { moduleName: "projects_add", description: "Projects — add", parentModule: "projects" },
   { moduleName: "projects_list", description: "Projects — manage", parentModule: "projects" },
 ];

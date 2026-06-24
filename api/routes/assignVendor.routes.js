@@ -12,12 +12,18 @@ const ASSIGN_VENDOR_GET_ALTS = [
   ["assigned_vendors", "view"],
   ["vendor_hod_review", "view"],
   ["vendor_finance_review", "view"],
+  ["vendor_admin_approval", "view"],
   ...ASSIGN_VENDOR_MASTER_DATA_ALTS,
 ];
 
 router.use(auth);
 
 router.get("/business-orders", checkAnyPermission(ASSIGN_VENDOR_GET_ALTS), controller.listBusinessOrdersForProject);
+router.get(
+  "/business-orders/:id",
+  checkAnyPermission(ASSIGN_VENDOR_GET_ALTS),
+  controller.getBusinessOrderForAssign,
+);
 router.get("/", checkAnyPermission(ASSIGN_VENDOR_GET_ALTS), controller.getAssignVendors);
 router.get("/:id", checkAnyPermission(ASSIGN_VENDOR_GET_ALTS), controller.getAssignVendor);
 router.post("/", checkPermission("assign_vendor", "add"), controller.assignVendorUploadMiddleware, controller.createAssignVendor);

@@ -1,3 +1,5 @@
+/** Bump when extraction logic changes — visible in upload API response for deploy checks. */
+const INVOICE_EXTRACTOR_VERSION = "2026-06-19-pagebreak-amounts-v6";
 const GST_REGEX = /\b\d{2}[A-Z]{5}\d{4}[A-Z][A-Z\d]Z[A-Z\d]\b/g;
 const TRN_REGEX = /\bTRN\s*[:#-]?\s*(\d+)\b/i;
 const AMOUNT_REGEX =
@@ -81,8 +83,35 @@ function looksNumericOnly(line) {
  * @param {string|null|undefined} taxAmount - Tax column (numeric when parsed from PDF table).
  * @param {string|null|undefined} totalAmount - Amount column (line amount before/excluding invoice grand total).
  */
+/**
+ * Merge split label/value lines: "Influencer name :" + "Roman Khan" → one line.
+ */
+function normalizeScopeDetails(rawLines) {
+  const lines = rawLines.map((d) => d.trim()).filter(Boolean);
+  const out = [];
+  for (let i = 0; i < lines.length; i += 1) {
+    const line = lines[i];
+    const labelOnly = line.match(/^([A-Za-z][\w\s]*?)\s*:?\s*$/);
+    if (labelOnly && i + 1 < lines.length && !/^[\d,]+(?:\.\d{1,2})?\s*[\d,]/.test(lines[i + 1])) {
+      const next = lines[i + 1].trim();
+      if (!/^(Influencer|Deliverables|Name|Client|management)\b/i.test(next) || next.includes(":")) {
+        out.push(`${labelOnly[1].trim()}: ${next}`);
+        i += 1;
+        continue;
+      }
+    }
+    if (/^Deliverables\s*:?\s*$/i.test(line) && i + 1 < lines.length) {
+      out.push(`Deliverables: ${lines[i + 1].trim()}`);
+      i += 1;
+      continue;
+    }
+    out.push(line);
+  }
+  return out;
+}
+
 function buildScopeItem(title, details, taxAmount = null, totalAmount = null) {
-  const normalizedDetails = details.map((d) => d.trim()).filter(Boolean);
+  const normalizedDetails = normalizeScopeDetails(details);
   const out = {
     title: normalizeField(title),
     details: normalizedDetails,
@@ -109,20 +138,269 @@ function findSowTableHeaderIndex(lines) {
   return -1;
 }
 
+/** Invoice line amounts use two decimal places, e.g. 1,100.00 or 400.00 */
+const MONETARY_AMOUNT_REGEX = /\b(\d{1,3}(?:,\d{3})+\.\d{2}|\d+\.\d{2})\b/g;
+
+function extractMonetaryAmountsFromLine(line) {
+  const s = line.trim();
+  if (!s) return [];
+  const amounts = [];
+  const re = new RegExp(MONETARY_AMOUNT_REGEX.source, "g");
+  let match;
+  while ((match = re.exec(s)) !== null) {
+    const value = toNumericAmount(match[1]);
+    if (value !== null) {
+      amounts.push({ value, index: match.index, text: match[1] });
+    }
+  }
+  return amounts;
+}
+
 /**
- * Last two decimal numbers on a line (Tax column, then Amount column), e.g. "2,500.00 50,000.00".
+ * Last two monetary amounts on a line (Tax column, then Amount column).
+ * Tolerates watermark/noise text between values, e.g. "400.00 Approved 8,000.00".
  */
 function extractTwoTrailingAmounts(line) {
   const s = line.trim();
   if (!s) return null;
-  const re = /([\d,]+(?:\.\d{1,2})?)\s+([\d,]+(?:\.\d{1,2})?)\s*$/;
-  const m = s.match(re);
-  if (!m) return null;
-  const tax = toNumericAmount(m[1]);
-  const amt = toNumericAmount(m[2]);
-  if (tax === null || amt === null) return null;
-  const before = s.slice(0, s.length - m[0].length).trim();
-  return { tax, amount: amt, before };
+
+  const amounts = extractMonetaryAmountsFromLine(s);
+  if (amounts.length < 2) return null;
+
+  const taxEntry = amounts[amounts.length - 2];
+  const amountEntry = amounts[amounts.length - 1];
+  const before = s.slice(0, taxEntry.index).trim();
+  return { tax: taxEntry.value, amount: amountEntry.value, before };
+}
+
+/**
+ * When tax/amount land on separate lines (common when PDF text columns break).
+ */
+function extractTwoAmountsFromLinePair(lineA, lineB) {
+  const first = extractMonetaryAmountsFromLine(lineA);
+  const second = extractMonetaryAmountsFromLine(lineB);
+  if (first.length === 1 && second.length === 1) {
+    return { tax: first[0].value, amount: second[0].value, before: lineA.slice(0, first[0].index).trim() };
+  }
+  return null;
+}
+
+/** Parse leading row number + title; tolerates "8 Influencer…" and "8Influencer…". */
+function parseRowLineParts(line) {
+  const trimmed = line.trim();
+  let match = trimmed.match(/^(\d+)[.)-]?\s+(.+)$/);
+  if (match) {
+    return { num: Number(match[1]), title: match[2].trim() };
+  }
+  match = trimmed.match(/^(\d+)([A-Za-z][\s\S]*)$/);
+  if (match) {
+    return { num: Number(match[1]), title: match[2].trim() };
+  }
+  return null;
+}
+
+/**
+ * Table row titles (e.g. "Influencer Services") — not deliverable detail lines ("1 IG Reel …").
+ */
+function isTableServiceRowTitle(title) {
+  const t = title.trim();
+  if (!t || t.length < 3) return false;
+  if (/^Influencer\b/i.test(t)) return true;
+  if (/^Management\b/i.test(t)) return true;
+  if (/\b(?:Services|Fee|Package|Consulting|Production)\b/i.test(t)) return true;
+  return false;
+}
+
+/**
+ * Match a service table row at or after minRowNum (handles multi-page gaps / out-of-order PDF text).
+ */
+function matchTableRowLine(line, minRowNum) {
+  const parts = parseRowLineParts(line);
+  if (!parts || parts.num < minRowNum) return null;
+  if (!isTableServiceRowTitle(parts.title)) return null;
+  return parts;
+}
+
+/**
+ * Table row numbers are sequential (1, 2, 3…). Detail lines like "1 IG Reel …" must not start a new row.
+ */
+function isTableRowStartLine(line, expectedRowNum) {
+  const matched = matchTableRowLine(line, expectedRowNum);
+  if (!matched || matched.num !== expectedRowNum) return null;
+  return { rowNum: matched.num, title: matched.title };
+}
+
+function isNextTableRowLine(line, currentRowNum) {
+  const matched = matchTableRowLine(line, currentRowNum + 1);
+  if (!matched || matched.num !== currentRowNum + 1) return false;
+  return true;
+}
+
+/** True when numbered service rows still appear after index (multi-page continuation). */
+function hasMoreServiceRowsAhead(lines, fromIndex, minRowNum) {
+  for (let j = fromIndex; j < lines.length; j += 1) {
+    const line = lines[j];
+    if (!line.trim()) continue;
+    if (isSkippableTableGapLine(line, lines, j)) continue;
+    if (matchTableRowLine(line, minRowNum)) return true;
+  }
+  return false;
+}
+
+function findRowLineIndex(lines, fromIndex, toIndex, rowNum) {
+  for (let j = fromIndex; j < toIndex; j += 1) {
+    if (isTableRowStartLine(lines[j], rowNum)) return j;
+  }
+  return -1;
+}
+
+/** Parse one table row starting at rowLineIndex; returns { item, nextIndex }. */
+function parseTableRowAt(lines, rowLineIndex, rowNum) {
+  const matched = matchTableRowLine(lines[rowLineIndex], rowNum);
+  if (!matched || matched.num !== rowNum) return null;
+
+  let title = matched.title;
+  const details = [];
+  let i = rowLineIndex + 1;
+  let taxAmount = null;
+  let totalAmount = null;
+  let foundAmounts = false;
+
+  const titleAmounts = extractTwoTrailingAmounts(title);
+  if (titleAmounts) {
+    taxAmount = titleAmounts.tax;
+    totalAmount = titleAmounts.amount;
+    title = titleAmounts.before || title;
+    foundAmounts = true;
+  }
+
+  while (i < lines.length) {
+    const L = lines[i];
+    if (!L.trim()) {
+      i += 1;
+      continue;
+    }
+
+    if (isHardTableEndLine(L)) {
+      if (hasMoreServiceRowsAhead(lines, i + 1, rowNum + 1)) {
+        i += 1;
+        continue;
+      }
+      break;
+    }
+
+    if (isSkippableTableGapLine(L, lines, i)) {
+      i += 1;
+      continue;
+    }
+
+    if (isNextTableRowLine(L, rowNum)) {
+      break;
+    }
+
+    const two = extractTwoTrailingAmounts(L);
+    if (two) {
+      taxAmount = two.tax;
+      totalAmount = two.amount;
+      if (two.before) details.push(two.before);
+      i += 1;
+      foundAmounts = true;
+      continue;
+    }
+
+    const pair = i + 1 < lines.length ? extractTwoAmountsFromLinePair(L, lines[i + 1]) : null;
+    if (pair) {
+      taxAmount = pair.tax;
+      totalAmount = pair.amount;
+      if (pair.before) details.push(pair.before);
+      i += 2;
+      foundAmounts = true;
+      continue;
+    }
+
+    if (foundAmounts && /^(?:[\d,]+(?:\.\d{1,2})?\s*)+$/.test(L.trim())) {
+      i += 1;
+      continue;
+    }
+
+    details.push(L);
+    i += 1;
+  }
+
+  return {
+    item: buildScopeItem(title, details, taxAmount, totalAmount),
+    nextIndex: i,
+  };
+}
+
+function findMaxServiceRowNum(lines, headerIdx) {
+  let max = 0;
+  for (let j = headerIdx + 1; j < lines.length; j += 1) {
+    const matched = matchTableRowLine(lines[j], 1);
+    if (matched && matched.num > max) max = matched.num;
+  }
+  return max;
+}
+
+/** Fill in rows present in PDF text but missed by the main pass (e.g. row 8 after Bank Details). */
+function recoverMissingTableRows(lines, headerIdx, rowItems) {
+  const maxRow = findMaxServiceRowNum(lines, headerIdx);
+  if (maxRow <= 0) return [];
+
+  for (let rowNum = 1; rowNum <= maxRow; rowNum += 1) {
+    if (rowItems.has(rowNum)) continue;
+
+    const rowIdx = findRowLineIndex(lines, headerIdx + 1, lines.length, rowNum);
+    if (rowIdx === -1) continue;
+
+    const parsed = parseTableRowAt(lines, rowIdx, rowNum);
+    if (parsed?.item) rowItems.set(rowNum, parsed.item);
+  }
+
+  const ordered = [];
+  for (let rowNum = 1; rowNum <= maxRow; rowNum += 1) {
+    if (rowItems.has(rowNum)) ordered.push(rowItems.get(rowNum));
+  }
+  return ordered;
+}
+
+/** Repeated column header on continuation pages — skip, do not stop parsing. */
+function isSowTableHeaderAt(lines, index) {
+  const primary = (lines[index] || "").trim();
+  // Must be the header row itself — not an amount line whose next lines include a page-break header.
+  if (
+    !/^#\s*Item/i.test(primary) &&
+    !/item\s*&\s*description|item\s+and\s+description/i.test(primary)
+  ) {
+    return false;
+  }
+  const window = [lines[index], lines[index + 1], lines[index + 2]].filter(Boolean).join(" ");
+  if (!/item\s*&\s*description|item\s+and\s+description/i.test(window)) return false;
+  if (!/\btax\b/i.test(window)) return false;
+  if (!/\bamount\b/i.test(window)) return false;
+  if (/grand\s*total|total\s*amount\s*payable|amount\s*due/i.test(window)) return false;
+  return true;
+}
+
+/** Lines that end the table (no more deliverable rows after this). */
+function isHardTableEndLine(line) {
+  return /^(?:Bank\s*Details|Authorized\s*Signature)\b/i.test(line.trim());
+}
+
+/**
+ * Totals / summary / page noise between table sections on multi-page PDFs.
+ * PDF text order often puts page-2 Sub Total before continued rows 5+.
+ */
+function isSkippableTableGapLine(line, lines, index) {
+  const t = line.trim();
+  if (!t) return true;
+  if (extractTwoTrailingAmounts(t)) return false;
+  if (isSowTableHeaderAt(lines, index)) return true;
+  if (/^Yet\s+to\s+be\s+Approved$/i.test(t)) return true;
+  if (/^\d{1,3}$/.test(t)) return true;
+  return /^(?:Sub\s*Total|Standard\s*Rate|Grand\s*Total|Total\s*AED|Total\s*Amount(?:\s*Payable)?|Tax\s*Summary|Payment\s*Terms|Terms\s*[:&]|Order\s*Date|Purchase\s*Order|Sales\s*person)\b/i.test(
+    t,
+  );
 }
 
 /**
@@ -132,65 +410,45 @@ function extractScopeFromSowTaxAmountTable(lines) {
   const headerIdx = findSowTableHeaderIndex(lines);
   if (headerIdx === -1) return [];
 
-  const items = [];
+  const rowItems = new Map();
   let i = headerIdx + 1;
-
-  const isFooter = (line) =>
-    /^(?:Total|Grand\s*Total|Sub\s*Total|Tax\s*Summary|Payment\s*Terms|Terms\s*&|Bank\s*Details)\b/i.test(
-      line.trim(),
-    );
+  let expectedRowNum = 1;
 
   while (i < lines.length) {
     while (i < lines.length && !lines[i].trim()) i += 1;
     if (i >= lines.length) break;
-    if (isFooter(lines[i])) break;
 
-    const rowMatch = lines[i].match(/^(\d+)[.)-]?\s+(.+)$/);
+    if (isHardTableEndLine(lines[i])) {
+      if (hasMoreServiceRowsAhead(lines, i + 1, expectedRowNum)) {
+        i += 1;
+        continue;
+      }
+      break;
+    }
+
+    if (isSkippableTableGapLine(lines[i], lines, i)) {
+      i += 1;
+      continue;
+    }
+
+    const rowMatch = matchTableRowLine(lines[i], expectedRowNum);
     if (!rowMatch) {
       i += 1;
       continue;
     }
 
-    const rowLabel = rowMatch[1];
-    const title = rowMatch[2].trim();
-    const details = [];
-    i += 1;
-
-    let taxAmount = null;
-    let totalAmount = null;
-
-    while (i < lines.length) {
-      const L = lines[i];
-      if (!L.trim()) {
-        i += 1;
-        continue;
-      }
-      if (isFooter(L)) break;
-
-      const two = extractTwoTrailingAmounts(L);
-      if (two) {
-        taxAmount = two.tax;
-        totalAmount = two.amount;
-        if (two.before) {
-          details.push(two.before);
-        }
-        i += 1;
-        break;
-      }
-
-      const nextRow = L.match(/^(\d+)[.)-]?\s+/);
-      if (nextRow && Number(nextRow[1]) !== Number(rowLabel)) {
-        break;
-      }
-
-      details.push(L);
+    const parsed = parseTableRowAt(lines, i, rowMatch.num);
+    if (!parsed?.item) {
       i += 1;
+      continue;
     }
 
-    items.push(buildScopeItem(title, details, taxAmount, totalAmount));
+    rowItems.set(rowMatch.num, parsed.item);
+    i = parsed.nextIndex;
+    expectedRowNum = rowMatch.num + 1;
   }
 
-  return items;
+  return recoverMissingTableRows(lines, headerIdx, rowItems);
 }
 
 function extractScopeFromGstTable(lines) {
@@ -373,6 +631,24 @@ function extractPurchaseOrderNumber(lines) {
 }
 
 /** Fills `purchaseOrderDate` in API; UI label is "Tracking date", PDFs often say "Order date". */
+function extractTermsAndConditions(lines) {
+  const startIdx = lines.findIndex((line) =>
+    /^Terms\s*(?:&|and)\s*Conditions\b/i.test(line.trim()),
+  );
+  if (startIdx === -1) return NOT_FOUND;
+
+  const collected = [];
+  for (let i = startIdx + 1; i < lines.length; i += 1) {
+    const line = lines[i].trim();
+    if (!line) continue;
+    if (/^(?:Authorized\s*Signature|Bank\s*Details)\b/i.test(line)) break;
+    collected.push(line);
+  }
+
+  if (!collected.length) return NOT_FOUND;
+  return normalizeField(collected.join("\n"));
+}
+
 function extractPurchaseOrderDate(lines) {
   const inlinePatterns = [
     /^(?:Order\s*Date)\s*[:#]?\s*(.+)$/i,
@@ -566,7 +842,7 @@ function computeStandardRateAmount(subtotalStr, ratePercent) {
   if (base === null) return NOT_FOUND;
   const amt = (base * ratePercent) / 100;
   return normalizeField(
-    amt.toLocaleString("en-IN", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
+    amt.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 }),
   );
 }
 
@@ -600,6 +876,7 @@ function extractInvoiceFields(rawText = "") {
     standardRate: normalizeField(`${STANDARD_RATE_PERCENT}%`),
     standardRateAmount: computeStandardRateAmount(subtotal, STANDARD_RATE_PERCENT),
     totalAmount: extractTotalAmount(lines),
+    termsAndConditions: extractTermsAndConditions(lines),
     scopeOfWork: scopeItems.length ? scopeItems : [{ title: NOT_FOUND, details: [] }],
   };
 
@@ -617,4 +894,4 @@ function extractInvoiceFields(rawText = "") {
   return result;
 }
 
-module.exports = { extractInvoiceFields };
+module.exports = { extractInvoiceFields, INVOICE_EXTRACTOR_VERSION };

@@ -226,24 +226,6 @@ function parseCostString(s) {
   return Number.isFinite(n) ? n : NaN;
 }
 
-/** Sum cost strings across vendor rows; returns display string or em dash if nothing numeric. */
-function sumCostsDisplay(values) {
-  let total = 0;
-  let any = false;
-  for (const v of values) {
-    const n = parseCostString(v);
-    if (!Number.isNaN(n)) {
-      total += n;
-      any = true;
-    }
-  }
-  if (!any) return "—";
-  return new Intl.NumberFormat("en-GB", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(total);
-}
-
 function sumCostsValue(values) {
   let total = 0;
   let any = false;
@@ -259,10 +241,14 @@ function sumCostsValue(values) {
 
 function formatNumberDisplay(value) {
   if (!Number.isFinite(value)) return "—";
-  return new Intl.NumberFormat("en-GB", {
-    minimumFractionDigits: 0,
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value);
+}
+
+function formatCostDisplay(value) {
+  return formatNumberDisplay(parseCostString(value));
 }
 
 /** Profit amount = cost to client - cost to agency; Profit % = pending part of agency/client, i.e. (client-agency)/client. */
@@ -946,14 +932,6 @@ const AssignVendorList = ({ listVariant = "manage" }) => {
             pageContent: "Assigned Vendors",
           };
 
-  const contextBlurb = isHod
-    ? "Open an SO to see vendors and record HOD approve / reject with a reason. Finance review is done in the Finance review module."
-    : isFinance
-      ? "Open an SO to see vendors and record Finance approve / reject with a reason. HOD review is done in the HOD review module."
-      : isAdminApproval
-        ? "Review vendor assignments older than 4 weeks from Order Date and approve or reject them."
-      : "Filter by client, project, sales order (SO), and optional vendor. The dashboard below shows each vendor line; expand a sales order to see all vendors on that SO.";
-
   const cardSubBlurb = isHod
     ? "Use HOD review to open assignments for an SO, then complete review on each vendor row."
     : isFinance
@@ -1112,8 +1090,8 @@ const AssignVendorList = ({ listVariant = "manage" }) => {
             {nameOf(rec.vendorId, "vendorName")}
           </span>
         </td>
-        <td className="text-muted small">{rec.costToAgency || "—"}</td>
-        <td className="text-muted small">{rec.costToClient || "—"}</td>
+        <td className="text-muted small">{formatCostDisplay(rec.costToAgency)}</td>
+        <td className="text-muted small">{formatCostDisplay(rec.costToClient)}</td>
         <td className="small">
           {Number.isFinite(totalAmount) ? formatNumberDisplay(totalAmount) : "—"}
         </td>

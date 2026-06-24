@@ -140,13 +140,16 @@ async function ensurePrivilegedRoleFullAccessIfMissing(roleId, roleName) {
   const modules = await ModuleModel.find().lean();
   if (!modules.length) return null;
 
-  const permissions = modules.map((m) => ({
-    moduleId: m._id,
-    moduleName: m.moduleName,
-    access: isManager
-      ? { view: true, add: true, update: true, delete: false }
-      : { view: true, add: true, update: true, delete: true },
-  }));
+  const managerBlockedModules = new Set(["vendor_admin_approval"]);
+  const permissions = modules
+    .filter((m) => !(isManager && managerBlockedModules.has(String(m.moduleName || "").trim())))
+    .map((m) => ({
+      moduleId: m._id,
+      moduleName: m.moduleName,
+      access: isManager
+        ? { view: true, add: true, update: true, delete: false }
+        : { view: true, add: true, update: true, delete: true },
+    }));
 
   return RolePermissionModel.findOneAndUpdate(
     { roleId },
@@ -167,6 +170,58 @@ async function ensureViewAllModulesForUnconfiguredRole(roleId) {
     moduleName: m.moduleName,
     access: { view: true, add: false, update: false, delete: false },
   }));
+  return RolePermissionModel.findOneAndUpdate(
+    { roleId },
+    { roleId, permissions },
+    { upsert: true, new: true, setDefaultsOnInsert: true }
+  );
+}
+
+/**
+ * Append module-catalog rows missing from an existing RolePermissions document.
+ * Admin/Manager get full access on new modules; other roles get denied until assigned.
+ */
+async function syncMissingModulesIntoRolePermissions(roleId, roleName) {
+  if (!roleId) return null;
+
+  const modules = await ModuleModel.find().lean();
+  if (!modules.length) return null;
+
+  const doc = await RolePermissionModel.findOne({ roleId });
+  const existingByModuleId = new Map(
+    (doc?.permissions || []).map((p) => [String(p.moduleId), p])
+  );
+
+  const rn = String(roleName || "").trim().toLowerCase();
+  const fullAccessRoles = new Set(["admin", "super admin", "superadmin"]);
+  const managerLikeRoles = new Set(["manager"]);
+  const isFull = fullAccessRoles.has(rn);
+  const isManager = managerLikeRoles.has(rn);
+  const managerBlockedModules = new Set(["vendor_admin_approval"]);
+
+  const permissions = [...(doc?.permissions || [])];
+  let changed = false;
+
+  for (const m of modules) {
+    const mid = String(m._id);
+    if (existingByModuleId.has(mid)) continue;
+    if (isManager && managerBlockedModules.has(String(m.moduleName || "").trim())) {
+      continue;
+    }
+    changed = true;
+    permissions.push({
+      moduleId: m._id,
+      moduleName: m.moduleName,
+      access: isFull
+        ? { view: true, add: true, update: true, delete: true }
+        : isManager
+          ? { view: true, add: true, update: true, delete: false }
+          : { view: false, add: false, update: false, delete: false },
+    });
+  }
+
+  if (!changed) return doc;
+
   return RolePermissionModel.findOneAndUpdate(
     { roleId },
     { roleId, permissions },
@@ -199,10 +254,14 @@ async function loadRolePermissionsForAuth(roleId) {
   if (hasAnyAccessFlag(doc?.permissions)) return doc;
 
   await ensureViewAllModulesForUnconfiguredRole(oid);
+  doc = await RolePermissionModel.findOne({ roleId: oid });
+
+  await syncMissingModulesIntoRolePermissions(oid, role?.roleName);
   return RolePermissionModel.findOne({ roleId: oid });
 }
 
 module.exports = {
   ensureDefaultRolePermissionsIfMissing,
+  syncMissingModulesIntoRolePermissions,
   loadRolePermissionsForAuth,
 };

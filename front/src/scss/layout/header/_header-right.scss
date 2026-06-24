@@ -190,6 +190,16 @@
             padding: 8px 24px;
         }
     }
+    .header-romeo-logo {
+        .header-romeo-logo-img {
+            width: 96px;
+            height: 34px;
+            display: block;
+            object-fit: cover;
+            object-position: center;
+            mix-blend-mode: multiply;
+        }
+    }
 }
 .dz-fullscreen {
     #icon-minimize {

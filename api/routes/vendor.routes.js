@@ -13,6 +13,8 @@ const VENDOR_GET_ALTS = [
   ["vendor_add", "add"],
   ["vendor_hod_review", "view"],
   ["vendor_finance_review", "view"],
+  ["so", "view"],
+  ["so", "add"],
   ...ASSIGN_VENDOR_MASTER_DATA_ALTS,
 ];
 

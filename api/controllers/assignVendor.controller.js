@@ -383,6 +383,46 @@ exports.listBusinessOrdersForProject = async (req, res) => {
   }
 };
 
+exports.getBusinessOrderForAssign = async (req, res) => {
+  try {
+    const { id } = req.params;
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({ message: "Valid business order id is required." });
+    }
+
+    const doc = await BusinessOrderInvoice.findById(id)
+      .select("clientId projectId scopeOfWork boNo invoiceNumber originalFileName purchaseOrderDate")
+      .lean();
+    if (!doc) {
+      return res.status(404).json({ message: "Sales order (SO) was not found." });
+    }
+
+    const scopeOfWork = Array.isArray(doc.scopeOfWork)
+      ? doc.scopeOfWork.map((item) => ({
+          title: item?.title ?? "",
+          details: Array.isArray(item?.details) ? item.details.map((d) => String(d)) : [],
+          departmentId: item?.departmentId != null ? String(item.departmentId) : "",
+          vendorId: item?.vendorId != null ? String(item.vendorId) : "",
+          taxAmount: item?.taxAmount ?? null,
+          totalAmount: item?.totalAmount ?? null,
+        }))
+      : [];
+
+    return res.json({
+      id: String(doc._id),
+      clientId: doc.clientId ? String(doc.clientId) : null,
+      projectId: doc.projectId ? String(doc.projectId) : null,
+      boNo: doc.boNo || "",
+      invoiceNumber: doc.invoiceNumber || "",
+      originalFileName: doc.originalFileName || "",
+      purchaseOrderDate: doc.purchaseOrderDate || "",
+      scopeOfWork,
+    });
+  } catch (err) {
+    return res.status(500).json({ message: err.message || "Load failed." });
+  }
+};
+
 exports.createAssignVendor = async (req, res) => {
   try {
     const body = req.body || {};

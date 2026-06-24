@@ -22,7 +22,10 @@ function formatNumber(value) {
 
 function formatMoney(value) {
   try {
-    return new Intl.NumberFormat(undefined, { maximumFractionDigits: 2 }).format(n(value));
+    return new Intl.NumberFormat("en-US", {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(n(value));
   } catch {
     return String(n(value));
   }
